@@ -1,126 +1,29 @@
-:root {
-    --gold: #d4af37;
-    --dark-bg: #0a0a0a;
-    --card-bg: #1a1a1a;
-    --text: #ffffff;
-    --success: #28a745;
-}
+:root { --gold: #ffd700; --dark: #050505; --glass: rgba(255, 255, 255, 0.05); }
 
 body {
-    background-color: var(--dark-bg);
-    color: var(--text);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    min-height: 100vh;
-    direction: rtl;
+    background: radial-gradient(circle, #1a1a1a 0%, var(--dark) 100%);
+    color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0;
 }
 
-.container {
-    width: 95%;
-    max-width: 600px;
-    padding: 20px;
-    text-align: center;
-}
+.container { width: 90%; max-width: 450px; text-align: center; }
+.gold-text { color: var(--gold); text-shadow: 0 0 15px rgba(255, 215, 0, 0.5); font-size: 2.2rem; margin-bottom: 20px; }
 
-.gold-text {
-    color: var(--gold);
-    text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
-    font-size: 2.2rem;
-    margin-bottom: 20px;
-}
+.screen { animation: slideIn 0.4s ease-out; }
+@keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-/* لوحة النقاط والترتيب */
-.points-grid {
-    background: rgba(212, 175, 55, 0.1);
-    border: 1px solid var(--gold);
-    border-radius: 15px;
-    padding: 15px;
-    margin-bottom: 20px;
-}
-
-.points-grid h3 {
-    margin-top: 0;
-    color: var(--gold);
-}
-
-.points-grid p {
-    font-size: 1.1rem;
-    border-bottom: 1px dashed #333;
-    padding: 5px 0;
-}
-
-/* الكروت والأزرار */
 .game-card {
-    background: var(--card-bg);
-    border: 2px solid var(--gold);
-    border-radius: 15px;
-    padding: 20px;
-    margin: 10px 0;
-    width: 100%;
-    color: white;
-    font-size: 1.1rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
+    background: var(--glass); border: 1px solid var(--gold); border-radius: 15px;
+    padding: 20px; margin: 15px 0; cursor: pointer; color: white; width: 100%;
+    transition: 0.3s; font-size: 1.2rem; backdrop-filter: blur(10px);
 }
+.game-card:hover { transform: scale(1.03); background: rgba(255, 215, 0, 0.1); }
 
-.game-card:hover {
-    background: #252525;
-    transform: translateY(-3px);
-}
-
-/* أزرار الأكشن */
-.action-btn {
-    background: var(--gold);
-    color: black;
-    border: none;
-    padding: 15px;
-    border-radius: 10px;
-    font-weight: bold;
-    font-size: 1.1rem;
-    cursor: pointer;
-    width: 100%;
-    margin-top: 10px;
-}
-
-.back-nav-btn {
-    background: transparent;
-    border: 1px solid var(--gold);
-    color: var(--gold);
-    padding: 10px;
-    border-radius: 10px;
-    cursor: pointer;
-    width: 100%;
-    margin-top: 10px;
-}
-
-/* مدخلات النصوص والقوائم */
-input, select {
-    width: 100%;
-    padding: 12px;
-    background: #222;
-    border: 1px solid var(--gold);
-    color: white;
-    border-radius: 10px;
-    margin-bottom: 10px;
-    text-align: center;
-    box-sizing: border-box;
-}
-
-.hidden {
-    display: none !important;
-}
-
-#options-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-@media (max-width: 480px) {
-    #options-container {
-        grid-template-columns: 1fr;
-    }
-}
+.action-btn { background: var(--gold); color: black; border: none; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; }
+.glass-box { background: rgba(255,255,255,0.03); padding: 30px; border-radius: 20px; margin: 20px 0; border: 1px dashed var(--gold); }
+.hidden { display: none !important; }
+.hidden-ans { color: #00ff88; font-weight: bold; padding-top: 15px; border-top: 1px solid #333; margin-top: 10px; }
+.flex-gap { display: flex; gap: 10px; }
+.btn-success { background: #28a745; color: white; border: none; flex: 1; padding: 15px; border-radius: 10px; cursor: pointer; }
+.btn-danger { background: #dc3545; color: white; border: none; flex: 1; padding: 15px; border-radius: 10px; cursor: pointer; }
+input { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 8px; margin-top: 10px; }
