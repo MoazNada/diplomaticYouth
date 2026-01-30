@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIPLOMATIC HUB - ULTRA</title>
+    <title>DIPLOMATIC HUB - ONLINE ELITE</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,10 +12,12 @@
 
         <div id="category-screen" class="screen">
             <h3>اختر نوع اللعبة</h3>
-            <button class="game-card" onclick="selectGame('kora')">⚽ كورة</button>
-            <button class="game-card" onclick="selectGame('fawazir')">🌙 فوازير</button>
+            <button class="game-card" onclick="setGame('kora')">⚽ كورة</button>
+            <button class="game-card" onclick="setGame('fawazir')">🌙 فوازير</button>
+            <button class="game-card" onclick="setGame('no_repeat')">🚫 بدون تكرار</button>
+            <button class="game-card" onclick="setGame('what_if')">🤔 لو كنت مكانك</button>
             <div style="margin-top:20px;">
-                <p>عدد الأسئلة:</p>
+                <p>عدد الأسئلة للمواجهة:</p>
                 <select id="q-count-select" class="action-btn" style="background:#222; color:white;">
                     <option value="10">10 أسئلة</option>
                     <option value="20">20 سؤال</option>
@@ -23,36 +25,50 @@
             </div>
         </div>
 
+        <div id="online-setup-screen" class="screen hidden">
+            <input type="text" id="user-name" placeholder="ادخل اسمك المستعار">
+            <button class="action-btn" onclick="initRoom('create')">➕ إنشاء غرفة أونلاين</button>
+            <hr style="border: 0.5px solid #333; margin: 20px 0;">
+            <input type="text" id="join-input" placeholder="ادخل كود الغرفة هنا">
+            <button class="game-card" onclick="initRoom('join')">🔗 انضمام لأصحابي</button>
+            <button class="back-nav-btn" onclick="showScreen('category-screen')" style="margin-top:10px;">رجوع</button>
+        </div>
+
         <div id="lobby-screen" class="screen hidden">
-            <h2 id="room-code" class="gold-text"></h2>
-            <div id="players-list" class="glass-box"></div>
-            <button id="host-start-btn" class="action-btn hidden" onclick="startNewRound(true)">ابدأ الجيم 🚀</button>
+            <h2 id="room-display" class="gold-text" style="letter-spacing: 5px;"></h2>
+            <p style="color: #888;">انسخ الكود اللي فوق ده وابعته لصحابك</p>
+            <div class="glass-box">
+                <p>الأبطال المتصلون حالياً:</p>
+                <div id="players-list"></div>
+            </div>
+            <button id="host-start-btn" class="action-btn hidden" onclick="triggerStart()">ابدأ المواجهة الآن! 🚀</button>
         </div>
 
         <div id="game-screen" class="screen hidden">
             <div class="timer-wrapper"><div id="timer-bar"></div></div>
-            <p id="q-status" style="color:var(--gold);"></p>
+            <p id="q-info" style="color:var(--gold); font-weight:bold;"></p>
             <div class="glass-box">
-                <h3 id="question-text">...</h3>
+                <h3 id="question-text">جاري تحميل السؤال...</h3>
             </div>
             <div id="input-zone">
-                <input type="text" id="ans-input" placeholder="اكتب إجابتك هنا...">
-                <button class="action-btn" onclick="submitAndCheck()">إرسال ✅</button>
+                <input type="text" id="ans-input" placeholder="اكتب إجابتك بسرعة!">
+                <button class="action-btn" onclick="submitProcess()">إرسال الإجابة ✅</button>
             </div>
-            <div id="feedback" class="hidden" style="font-size: 1.5rem; margin-top:10px;"></div>
+            <div id="instant-feedback" class="hidden" style="font-size: 1.3rem; margin-top:15px; font-weight:bold;"></div>
         </div>
 
         <div id="result-screen" class="screen hidden">
-            <h3 class="gold-text">النتائج 🏆</h3>
+            <h3 class="gold-text">نتائج الجولة 🏆</h3>
             <div id="leaderboard" class="glass-box"></div>
-            <div class="glass-box" style="border:1px solid #00ff88">
-                <p>الإجابة كانت:</p>
-                <h2 id="correct-reveal" style="color:#00ff88"></h2>
+            <div class="glass-box" style="border: 1px solid #00ff88;">
+                <p>الإجابة الصحيحة كانت:</p>
+                <h2 id="correct-answer-reveal" style="color:#00ff88;"></h2>
             </div>
-            <div id="host-nav" class="hidden">
-                <button id="next-q-btn" class="action-btn" onclick="startNewRound(false)">السؤال التالي ➡️</button>
-                <button class="game-card" onclick="location.reload()">العودة للرئيسية 🏠</button>
+            <div id="host-controls" class="hidden">
+                <button class="action-btn" onclick="triggerStart()">السؤال التالي ➡️</button>
+                <button class="game-card" onclick="location.reload()">تغيير اللعبة أو الغرفة 🏠</button>
             </div>
+            <p id="guest-msg" class="hidden">انتظر المضيف لبدء السؤال القادم...</p>
         </div>
     </div>
 
@@ -72,10 +88,12 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let me = { name: '', room: '', isHost: false, game: '', score: 0, maxQ: 10 };
-        const questions = {
-            kora: [{q:"من هداف العالم؟", a:"رونالدو"}, {q:"نادي القرن؟", a:"الاهلي"}, {q:"بطل مونديال 2022؟", a:"الارجنتين"}], // زود لحد 20 هنا
-            fawazir: [{q:"شيء يكتب ولا يقرأ؟", a:"القلم"}, {q:"له أسنان ولا يعض؟", a:"المشط"}] // زود لحد 20 هنا
+        let me = { name: '', room: '', isHost: false, gameType: '', maxQ: 10, currentScore: 0 };
+        const dataBank = {
+            kora: [{q:"من هو هداف العالم التاريخي؟", a:"رونالدو"}, {q:"نادي القرن في أفريقيا؟", a:"الاهلي"}, {q:"بطل كأس العالم 2022؟", a:"الارجنتين"}],
+            fawazir: [{q:"شيء يطير بلا أجنحة؟", a:"الدخان"}, {q:"له أسنان ولا يعض؟", a:"المشط"}],
+            no_repeat: [{q:"اذكر اسم فاكهة لونها أحمر (ممنوع التكرار)", a:"تفاح"}],
+            what_if: [{q:"لو كنت مكانك ووجدت محفظة فلوس؟", a:"هرجعها"}]
         };
 
         function showScreen(id) {
@@ -83,95 +101,103 @@
             document.getElementById(id).classList.remove('hidden');
         }
 
-        window.selectGame = (g) => {
-            me.game = g;
+        window.setGame = (g) => {
+            me.gameType = g;
             me.maxQ = document.getElementById('q-count-select').value;
-            me.name = prompt("اكتب اسمك") || "لاعب";
-            me.room = Math.random().toString(36).substring(2,6).toUpperCase();
-            me.isHost = true;
-            
-            db.ref('hub/'+me.room).set({status:'lobby', qIdx: 0, game: g, maxQ: me.maxQ, timer: 15});
-            joinRoom(me.room);
+            showScreen('online-setup-screen');
         };
 
-        // دالة الانضمام (للكل)
-        function joinRoom(id) {
-            me.room = id;
-            db.ref('hub/'+id+'/players/'+me.name).set({score:0, submitted: false});
-            listenUpdates();
-            showScreen('lobby-screen');
-        }
+        window.initRoom = (type) => {
+            me.name = document.getElementById('user-name').value.trim() || "لاعب_" + Math.floor(Math.random()*99);
+            me.room = type === 'create' ? Math.random().toString(36).substring(2,6).toUpperCase() : document.getElementById('join-input').value.toUpperCase();
+            me.isHost = type === 'create';
 
-        function listenUpdates() {
-            db.ref('hub/'+me.room).on('value', snap => {
+            if(me.isHost) {
+                db.ref('party/' + me.room).set({
+                    status: 'lobby', qIdx: 0, game: me.gameType, maxQ: me.maxQ, timer: 15
+                });
+            }
+            db.ref('party/' + me.room + '/players/' + me.name).set({ score: 0, submitted: false, lastAns: '' });
+            
+            listenToFirebase();
+            showScreen('lobby-screen');
+        };
+
+        function listenToFirebase() {
+            db.ref('party/' + me.room).on('value', (snap) => {
                 const data = snap.val(); if(!data) return;
-                document.getElementById('room-code').innerText = "كود: " + me.room;
-                
-                // تحديث اللاعبين
+                document.getElementById('room-display').innerText = me.room;
+
                 const pList = document.getElementById('players-list');
                 const board = document.getElementById('leaderboard');
                 pList.innerHTML = ""; board.innerHTML = "";
-                let allDone = true;
-                
+                let allSubmitted = true;
+                let playerCount = 0;
+
                 for(let p in data.players) {
-                    pList.innerHTML += `<p>👤 ${p}: ${data.players[p].score}</p>`;
-                    board.innerHTML += `<p>${p}: ${data.players[p].score} نقطة</p>`;
-                    if(!data.players[p].submitted) allDone = false;
+                    playerCount++;
+                    pList.innerHTML += `<p>👤 ${p} - ${data.players[p].score}ن</p>`;
+                    board.innerHTML += `<div style="display:flex; justify-content:space-between; margin:5px 0; border-bottom:1px solid #222;"><span>${p}</span> <span>${data.players[p].score} نقطة</span></div>`;
+                    if(!data.players[p].submitted) allSubmitted = false;
                 }
 
-                // الانتقال الفوري للنتائج لو الكل جاوب [Quick-Skip]
-                if(allDone && data.status === 'playing' && me.isHost) {
-                    db.ref('hub/'+me.room).update({status: 'results'});
+                if(allSubmitted && playerCount > 0 && data.status === 'playing' && me.isHost) {
+                    db.ref('party/' + me.room).update({ status: 'results' });
                 }
 
                 if(data.status === 'playing') {
                     showScreen('game-screen');
-                    document.getElementById('question-text').innerText = questions[data.game][data.qIdx].q;
-                    document.getElementById('q-status').innerText = `سؤال ${data.qIdx+1} من ${data.maxQ}`;
-                    document.getElementById('timer-bar').style.width = (data.timer/15*100) + "%";
+                    document.getElementById('input-zone').classList.remove('hidden');
+                    document.getElementById('instant-feedback').classList.add('hidden');
+                    document.getElementById('q-info').innerText = `سؤال ${data.qIdx + 1} من ${data.maxQ}`;
+                    document.getElementById('question-text').innerText = dataBank[data.game][data.qIdx].q;
+                    document.getElementById('timer-bar').style.width = (data.timer / 15 * 100) + "%";
                 } else if(data.status === 'results') {
                     showScreen('result-screen');
-                    document.getElementById('correct-reveal').innerText = questions[data.game][data.qIdx].a;
-                    if(me.isHost) document.getElementById('host-nav').classList.remove('hidden');
+                    document.getElementById('correct-answer-reveal').innerText = dataBank[data.game][data.qIdx].a;
+                    document.getElementById('host-controls').classList.toggle('hidden', !me.isHost);
+                    document.getElementById('guest-msg').classList.toggle('hidden', me.isHost);
                 }
-                
+
                 if(me.isHost) document.getElementById('host-start-btn').classList.toggle('hidden', data.status !== 'lobby');
             });
         }
 
-        window.submitAndCheck = () => {
-            const userAns = document.getElementById('ans-input').value.trim();
-            const correctAns = questions[me.game][0].a; // سيتم تحديث الـ index ديناميكياً
-            const feedback = document.getElementById('feedback');
-            
-            feedback.classList.remove('hidden');
-            if(userAns.toLowerCase() === correctAns.toLowerCase()) {
-                feedback.innerHTML = "✅ إجابة صحيحة!";
-                feedback.style.color = "#00ff88";
-                me.score += 10;
-                db.ref('hub/'+me.room+'/players/'+me.name).update({score: me.score});
-            } else {
-                feedback.innerHTML = `❌ خطأ! الإجابة: ${correctAns}`;
-                feedback.style.color = "#ff4444";
-            }
-            
-            db.ref('hub/'+me.room+'/players/'+me.name).update({submitted: true});
-            document.getElementById('input-zone').classList.add('hidden');
+        window.submitProcess = () => {
+            const val = document.getElementById('ans-input').value.trim();
+            db.ref('party/' + me.room).once('value', s => {
+                const correct = dataBank[s.val().game][s.val().qIdx].a;
+                const feedback = document.getElementById('instant-feedback');
+                feedback.classList.remove('hidden');
+
+                if(val.toLowerCase() === correct.toLowerCase()) {
+                    feedback.innerHTML = "✅ إجابة صحيحة!";
+                    feedback.style.color = "#00ff88";
+                    me.currentScore += 10;
+                    db.ref('party/' + me.room + '/players/' + me.name).update({ score: me.currentScore });
+                } else {
+                    feedback.innerHTML = `❌ خطأ! الإجابة هي: ${correct}`;
+                    feedback.style.color = "#ff4444";
+                }
+                db.ref('party/' + me.room + '/players/' + me.name).update({ submitted: true, lastAns: val });
+                document.getElementById('input-zone').classList.add('hidden');
+                document.getElementById('ans-input').value = "";
+            });
         };
 
-        window.startNewRound = (first) => {
-            db.ref('hub/'+me.room).once('value', s => {
-                let nextIdx = first ? 0 : s.val().qIdx + 1;
-                // ريست للاعبين
-                for(let p in s.val().players) db.ref('hub/'+me.room+'/players/'+p).update({submitted: false});
+        window.triggerStart = () => {
+            db.ref('party/' + me.room).once('value', s => {
+                let nextQ = s.val().status === 'results' ? s.val().qIdx + 1 : 0;
+                for(let p in s.val().players) db.ref('party/'+me.room+'/players/'+p).update({submitted: false});
                 
-                db.ref('hub/'+me.room).update({status: 'playing', qIdx: nextIdx, timer: 15});
-                
-                // التوقيت
+                db.ref('party/' + me.room).update({ status: 'playing', qIdx: nextQ, timer: 15 });
                 let t = 15;
                 let i = setInterval(() => {
-                    t--; db.ref('hub/'+me.room).update({timer: t});
-                    if(t <= 0) { clearInterval(i); db.ref('hub/'+me.room).update({status: 'results'}); }
+                    t--; db.ref('party/' + me.room).update({ timer: t });
+                    if(t <= 0) {
+                        clearInterval(i);
+                        db.ref('party/' + me.room).update({ status: 'results' });
+                    }
                 }, 1000);
             });
         };
