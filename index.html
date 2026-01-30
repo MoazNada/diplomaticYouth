@@ -20,20 +20,24 @@
             <button class="game-card" onclick="setCategory('kora')">⚽ تحدي الكورة</button>
             <button class="game-card" onclick="setCategory('fawazir')">🌙 فوازير رمضان</button>
             <button class="game-card" onclick="setCategory('spy')">🕵️ مين الجاسوس؟</button>
+            <button class="back-nav-btn" onclick="location.reload()">رجوع</button>
         </div>
 
         <div id="setup-screen" class="screen hidden">
             <p>عدد الأبطال (2-10):</p>
             <input type="number" id="player-count" min="2" max="10" value="2" onchange="generateInputs()">
-            <div id="names-container"></div>
+            <div id="names-container">
+                <input type="text" placeholder="اسم اللاعب 1" class="p-name">
+                <input type="text" placeholder="اسم اللاعب 2" class="p-name">
+            </div>
             <button class="action-btn" onclick="startBattle()">ابدأ المعركة</button>
         </div>
 
         <div id="game-screen" class="screen hidden">
             <div id="turn-info" class="gold-text">دور اللاعب: <span id="current-p"></span></div>
             <div class="glass-box">
-                <p id="q-text"></p>
-                <p id="a-text" class="hidden-ans"></p>
+                <p id="q-text">جاري التحميل...</p>
+                <p id="a-text" class="hidden-ans hidden"></p>
             </div>
             <button id="show-ans-btn" class="action-btn" onclick="showAnswer()">إظهار الإجابة</button>
             <div id="score-controls" class="hidden flex-gap">
