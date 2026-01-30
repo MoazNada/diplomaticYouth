@@ -1,3 +1,4 @@
+// إعدادات Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAESCjnKsQxNX_IKH9Fm_ePpIsbb9C_NsE",
   authDomain: "diplomatic-games.firebaseapp.com",
@@ -7,56 +8,94 @@ const firebaseConfig = {
   appId: "1:726415224604:web:3f436ef230254a5ee914d9",
   databaseURL: "https://diplomatic-games-default-rtdb.firebaseio.com"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let state = { conn: '', cat: '', players: [], scores: {}, round: 0, currentIdx: 0 };
-const questions = {
-    kora: [
-        {q: "من هو الهداف التاريخي لكأس العالم؟", a: "ميروسلاف كلوزه (16 هدف)"},
-        {q: "نادي يلقب بـ 'قلعة الكؤوس'؟", a: "الأهلي السعودي"},
-        {q: "من فاز بكأس العالم 2014؟", a: "ألمانيا"},
-        {q: "كم عدد بطولات الزمالك في دوري أبطال أفريقيا؟", a: "5 بطولات"},
-        {q: "من هو مدرب منتخب مصر الحالي؟", a: "حسام حسن"}
-    ],
-    fawazir: [
-        {q: "شيء تلمسه ولا تراه، فما هو؟", a: "الهواء"},
-        {q: "ما هو الشيء الذي ينبض بلا قلب؟", a: "الساعة"},
-        {q: "حاجة لها سنان ومبتعضش؟", a: "المشط"}
-    ],
-    spy: ["مستشفى", "مطار", "مطعم", "مدرسة", "ملعب", "سينما", "حديقة"]
+// متغيرات الحالة
+let gameStatus = {
+    connection: '',
+    category: '',
+    players: [],
+    scores: {},
+    round: 0,
+    currentPlayerIndex: 0
 };
 
-function setConnection(c) { state.conn = c; move('connection-screen', 'category-screen'); }
-function setCategory(cat) { state.cat = cat; move('category-screen', 'setup-screen'); generateInputs(); }
+// بنك الأسئلة (10 لكل فئة)
+const questionBank = {
+    kora: [
+        {q: "من هو الهداف التاريخي لكأس العالم؟", a: "ميروسلاف كلوزه"},
+        {q: "نادي يلقب بـ 'قلعة الكؤوس' في السعودية؟", a: "الأهلي"},
+        {q: "من فاز بكأس العالم 2014؟", a: "ألمانيا"},
+        {q: "من هو اللاعب الملقب بـ 'البرغوث'؟", a: "ليونيل ميسي"},
+        {q: "أين يلعب محمد صلاح حالياً؟", a: "ليفربول"},
+        {q: "كم عدد لاعبي فريق كرة القدم؟", a: "11 لاعب"},
+        {q: "من هو بطل دوري أبطال أوروبا 2024؟", a: "ريال مدريد"},
+        {q: "أين أقيم كأس العالم 2022؟", a: "قطر"},
+        {q: "مدرب النادي الأهلي المصري الحالي؟", a: "مارسيل كولر"},
+        {q: "ما هو ملعب نادي الزمالك؟", a: "ستاد القاهرة"}
+    ],
+    fawazir: [
+        {q: "شيء يكتب ولا يقرأ؟", a: "القلم"},
+        {q: "شيء ينبض بلا قلب؟", a: "الساعة"},
+        {q: "كلما زاد نقص، فما هو؟", a: "العمر"},
+        {q: "له أسنان ولا يعض؟", a: "المشط"},
+        {q: "يخترق الزجاج ولا يكسره؟", a: "الضوء"},
+        {q: "له عين واحدة ولا يرى؟", a: "الإبرة"},
+        {q: "يمشي بلا أرجل؟", a: "الزمن"},
+        {q: "بحر لا يوجد فيه ماء؟", a: "على الخريطة"},
+        {q: "بيت ليس فيه أبواب ولا نوافذ؟", a: "بيت الشعر"},
+        {q: "شيء تحمله ويحملك؟", a: "الحذاء"}
+    ],
+    spy: ["مطار", "مستشفى", "ملعب", "سيرك", "مطعم", "حديقة", "مدرسة", "مسبح", "سينما", "بنك"]
+};
+
+// وظائف التنقل
+function move(fromId, toId) {
+    document.getElementById(fromId).classList.add('hidden');
+    document.getElementById(toId).classList.remove('hidden');
+}
+
+function setConnection(type) {
+    gameStatus.connection = type;
+    move('connection-screen', 'category-screen');
+}
+
+function setCategory(cat) {
+    gameStatus.category = cat;
+    move('category-screen', 'setup-screen');
+}
 
 function generateInputs() {
-    const n = document.getElementById('player-count').value;
+    const count = document.getElementById('player-count').value;
     const container = document.getElementById('names-container');
     container.innerHTML = '';
-    for(let i=1; i<=n; i++) container.innerHTML += `<input type="text" placeholder="اسم اللاعب ${i}" class="p-name">`;
+    for(let i = 1; i <= count; i++) {
+        container.innerHTML += `<input type="text" placeholder="اسم اللاعب ${i}" class="p-name">`;
+    }
 }
 
 function startBattle() {
     const inputs = document.querySelectorAll('.p-name');
-    state.players = Array.from(inputs).map((inp, i) => inp.value || `لاعب ${i+1}`);
-    state.players.forEach(p => state.scores[p] = 0);
+    gameStatus.players = Array.from(inputs).map((inp, i) => inp.value || `لاعب ${i+1}`);
+    gameStatus.players.forEach(p => gameStatus.scores[p] = 0);
     move('setup-screen', 'game-screen');
-    loadTurn();
+    loadQuestion();
 }
 
-function loadTurn() {
-    document.getElementById('current-p').innerText = state.players[state.currentIdx];
+function loadQuestion() {
+    document.getElementById('current-p').innerText = gameStatus.players[gameStatus.currentPlayerIndex];
     document.getElementById('a-text').classList.add('hidden');
     document.getElementById('score-controls').classList.add('hidden');
     document.getElementById('show-ans-btn').classList.remove('hidden');
 
-    if(state.cat === 'spy') {
-        const place = questions.spy[Math.floor(Math.random()*questions.spy.length)];
-        document.getElementById('q-text').innerText = "المكان السري (لا تخبر أحداً): " + place;
-        document.getElementById('a-text').innerText = "الآن ابدأ بالأسئلة لكشف الجاسوس!";
+    if(gameStatus.category === 'spy') {
+        const place = questionBank.spy[Math.floor(Math.random() * questionBank.spy.length)];
+        document.getElementById('q-text').innerText = "المكان السري هو: " + place;
+        document.getElementById('a-text').innerText = "الجاسوس عليه التخمين!";
     } else {
-        const item = questions[state.cat][state.round % questions[state.cat].length];
+        const item = questionBank[gameStatus.category][gameStatus.round % 10];
         document.getElementById('q-text').innerText = item.q;
         document.getElementById('a-text').innerText = "الإجابة: " + item.a;
     }
@@ -68,20 +107,24 @@ function showAnswer() {
     document.getElementById('score-controls').classList.remove('hidden');
 }
 
-function handleScore(isWin) {
-    if(isWin) state.scores[state.players[state.currentIdx]]++;
-    state.currentIdx++;
-    if(state.currentIdx >= state.players.length) { state.currentIdx = 0; state.round++; }
-    if(state.round < 5) loadTurn(); else showFinal();
+function handleScore(isCorrect) {
+    if(isCorrect) gameStatus.scores[gameStatus.players[gameStatus.currentPlayerIndex]]++;
+    
+    gameStatus.currentPlayerIndex++;
+    if(gameStatus.currentPlayerIndex >= gameStatus.players.length) {
+        gameStatus.currentPlayerIndex = 0;
+        gameStatus.round++;
+    }
+
+    if(gameStatus.round < 10) {
+        loadQuestion();
+    } else {
+        showFinalResults();
+    }
 }
 
-function showFinal() {
+function showFinalResults() {
     move('game-screen', 'result-screen');
-    let html = state.players.map(p => `<p>${p}: ${state.scores[p]} نقطة</p>`).join('');
-    document.getElementById('final-table').innerHTML = html;
-}
-
-function move(oldS, newS) {
-    document.getElementById(oldS).classList.add('hidden');
-    document.getElementById(newS).classList.remove('hidden');
+    let resultsHtml = gameStatus.players.map(p => `<p>${p}: ${gameStatus.scores[p]} نقطة</p>`).join('');
+    document.getElementById('final-table').innerHTML = resultsHtml;
 }
