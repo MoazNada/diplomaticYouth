@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIPLOMATIC HUB</title>
+    <title>DIPLOMATIC HUB - PARTY</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,39 +11,38 @@
         <h1 class="gold-text">DIPLOMATIC HUB</h1>
 
         <div id="connection-screen" class="screen">
-            <button class="game-card" onclick="goToLobby()">🌐 لعب أونلاين</button>
-            <button class="game-card" onclick="goToCategories()">🏠 لعب محلي</button>
+            <button class="game-card" onclick="nav('online-lobby')">🌐 إنشاء غرفة</button>
+            <button class="game-card" onclick="nav('online-lobby')">🔗 دخول برمز</button>
         </div>
 
         <div id="online-lobby" class="screen hidden">
+            <input type="text" id="player-name" placeholder="اكتب اسمك هنا">
             <button class="action-btn" onclick="makeRoom()">➕ إنشاء غرفة جديدة</button>
-            <p style="margin:20px 0; color:#888;">أو</p>
-            <input type="text" id="room-input" placeholder="ادخل كود الغرفة">
-            <button class="game-card" onclick="enterRoom()">🔗 دخول غرفة</button>
-            <button class="back-nav-btn" onclick="location.reload()">رجوع</button>
+            <div style="margin:15px 0;">أو</div>
+            <input type="text" id="room-input" placeholder="كود الغرفة">
+            <button class="game-card" onclick="enterRoom()">دخول</button>
         </div>
 
-        <div id="category-screen" class="screen hidden">
-            <h3>اختر نوع التحدي</h3>
-            <button class="game-card" onclick="pickGame('kora')">⚽ تحدي الكورة</button>
-            <button class="game-card" onclick="pickGame('fawazir')">🌙 فوازير رمضان</button>
-            <button class="game-card" onclick="pickGame('spy')">🕵️ مين الجاسوس؟</button>
+        <div id="lobby-screen" class="screen hidden">
+            <h3 class="gold-text" id="room-display"></h3>
+            <p>اللاعبين المتصلين:</p>
+            <ul id="players-list" style="list-style:none; padding:0;"></ul>
+            <button id="start-game-btn" class="action-btn hidden" onclick="pickGame('kora')">ابدأ تحدي الكورة ⚽</button>
         </div>
 
         <div id="game-screen" class="screen hidden">
-            <p class="gold-text" id="status-display">انتظر...</p>
-            <div class="glass-box">
-                <p id="question-text">في انتظار اختيار اللعبة...</p>
-                <p id="answer-text" class="hidden" style="color:#00ff88; margin-top:15px; border-top:1px solid #333; padding-top:10px;"></p>
+            <div id="timer-bar" style="background:var(--gold); height:5px; width:100%;"></div>
+            <p id="question-text" class="glass-box" style="font-size:1.5rem;"></p>
+            
+            <div id="answer-area">
+                <input type="text" id="answer-input" placeholder="اكتب إجابتك هنا..." oninput="checkAnswer()">
+                <p id="feedback" style="margin-top:10px;"></p>
             </div>
-            <div id="host-controls" class="hidden">
-                <button class="action-btn" onclick="showMeAnswer()">إظهار الإجابة</button>
-                <div style="display:flex; gap:10px; margin-top:15px;">
-                    <button class="action-btn" style="background:#28a745;" onclick="moveNext()">صح ✅</button>
-                    <button class="action-btn" style="background:#dc3545;" onclick="moveNext()">غلط ❌</button>
-                </div>
+
+            <div id="leaderboard" class="glass-box" style="margin-top:20px;">
+                <h4>النتائج الحية 🏆</h4>
+                <div id="scores-display"></div>
             </div>
-            <p id="waiting-msg" class="hidden">انتظر المضيف يختار اللعبة...</p>
         </div>
     </div>
 
@@ -51,7 +50,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
 
     <script>
-        // دمجنا الـ JS هنا عشان نضمن الاستجابة
+        // إعدادات Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAESCjnKsQxNX_IKH9Fm_ePpIsbb9C_NsE",
             authDomain: "diplomatic-games.firebaseapp.com",
@@ -64,11 +63,9 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let myGame = { roomId: '', isHost: false, type: '', round: 0 };
+        let myData = { name: '', room: '', isHost: false, score: 0 };
         const questions = {
-            kora: [{q:"من هداف العالم؟", a:"رونالدو"}, {q:"بطل 2022؟", a:"الأرجنتين"}],
-            fawazir: [{q:"يكتب ولا يقرأ؟", a:"القلم"}],
-            spy: ["مطار", "مستشفى", "ملعب"]
+            kora: [{q:"من هو هداف العالم التاريخي؟", a:"رونالدو"}, {q:"نادي القرن في أفريقيا؟", a:"الاهلي"}]
         };
 
         function nav(id) {
@@ -76,75 +73,78 @@
             document.getElementById(id).classList.remove('hidden');
         }
 
-        window.goToLobby = () => nav('online-lobby');
-        window.goToCategories = () => nav('category-screen');
-
         window.makeRoom = () => {
             const rId = Math.random().toString(36).substring(2, 6).toUpperCase();
-            myGame.roomId = rId;
-            myGame.isHost = true;
-            db.ref('rooms/' + rId).set({ status: 'waiting', round: 0, showAnswer: false, gameType: '' })
-            .then(() => {
-                alert("كود غرفتك: " + rId);
-                watchRoom(rId);
-                nav('category-screen');
+            myData.name = document.getElementById('player-name').value || "لاعب 1";
+            myData.room = rId;
+            myData.isHost = true;
+            
+            db.ref('party/' + rId).set({
+                status: 'waiting',
+                questionIdx: 0,
+                players: { [myData.name]: 0 }
+            }).then(() => {
+                listenToParty(rId);
+                nav('lobby-screen');
+                document.getElementById('start-game-btn').classList.remove('hidden');
             });
         };
 
         window.enterRoom = () => {
             const rId = document.getElementById('room-input').value.toUpperCase().trim();
-            db.ref('rooms/' + rId).once('value', (snap) => {
-                if (snap.exists()) {
-                    myGame.roomId = rId;
-                    myGame.isHost = false;
-                    watchRoom(rId);
-                    nav('game-screen');
-                } else { alert("الكود غلط!"); }
+            myData.name = document.getElementById('player-name').value || "لاعب جديد";
+            myData.room = rId;
+            
+            db.ref('party/' + rId + '/players/' + myData.name).set(0).then(() => {
+                listenToParty(rId);
+                nav('lobby-screen');
             });
         };
 
-        window.pickGame = (t) => {
-            if (myGame.isHost) {
-                db.ref('rooms/' + myGame.roomId).update({ gameType: t });
-                nav('game-screen');
-            } else {
-                myGame.type = t;
-                nav('game-screen');
-                updateDisplay();
-            }
-        };
+        function listenToParty(rId) {
+            document.getElementById('room-display').innerText = "غرفة: " + rId;
+            db.ref('party/' + rId).on('value', (snap) => {
+                const data = snap.val();
+                if(!data) return;
 
-        function watchRoom(rId) {
-            db.ref('rooms/' + rId).on('value', (snap) => {
-                const v = snap.val();
-                if (!v) return;
-                myGame.type = v.gameType;
-                myGame.round = v.round;
+                // تحديث قائمة اللاعبين والنتائج
+                const list = document.getElementById('players-list');
+                const scoreDiv = document.getElementById('scores-display');
+                list.innerHTML = ""; scoreDiv.innerHTML = "";
                 
-                if (myGame.isHost) {
-                    document.getElementById('host-controls').classList.remove('hidden');
-                    document.getElementById('waiting-msg').classList.add('hidden');
-                } else {
-                    document.getElementById('host-controls').classList.add('hidden');
-                    document.getElementById('waiting-msg').classList.toggle('hidden', !!myGame.type);
+                for(let p in data.players) {
+                    list.innerHTML += `<li>✅ ${p}</li>`;
+                    scoreDiv.innerHTML += `<p>${p}: ${data.players[p]} نقطة</p>`;
                 }
 
-                document.getElementById('answer-text').classList.toggle('hidden', !v.showAnswer);
-                if (myGame.type) updateDisplay();
+                if(data.status === 'playing') {
+                    nav('game-screen');
+                    const q = questions.kora[data.questionIdx];
+                    document.getElementById('question-text').innerText = q.q;
+                    myData.currentAns = q.a;
+                }
             });
         }
 
-        function updateDisplay() {
-            const list = questions[myGame.type];
-            const q = list[myGame.round % list.length];
-            document.getElementById('question-text').innerText = q.q || q;
-            document.getElementById('answer-text').innerText = "الإجابة: " + (q.a || "خمن!");
-            document.getElementById('status-display').innerText = "جاري التحدي...";
-        }
+        window.pickGame = (type) => {
+            db.ref('party/' + myData.room).update({ status: 'playing', questionIdx: 0 });
+        };
 
-        window.showMeAnswer = () => db.ref('rooms/' + myGame.roomId).update({ showAnswer: true });
-        window.moveNext = () => db.ref('rooms/' + myGame.roomId).update({ round: myGame.round + 1, showAnswer: false });
-
+        window.checkAnswer = () => {
+            const val = document.getElementById('answer-input').value.trim();
+            if(val === myData.currentAns) {
+                myData.score += 10;
+                document.getElementById('answer-input').value = "";
+                document.getElementById('feedback').innerText = "صح! 🎉";
+                db.ref('party/' + myData.room + '/players/' + myData.name).set(myData.score);
+                // المضيف ينقل للسؤال اللي بعده لو كله جاوب
+                if(myData.isHost) {
+                    setTimeout(() => {
+                        db.ref('party/' + myData.room).update({ questionIdx: 1 });
+                    }, 2000);
+                }
+            }
+        };
     </script>
 </body>
 </html>
