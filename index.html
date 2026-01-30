@@ -3,21 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIPLOMATIC HUB - REFEREE MODE</title>
+    <title>DIPLOMATIC HUB - AI SMART</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        .player-card { background: #222; padding: 10px; margin: 5px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #444; }
-        .correct-btn { background: #00ff88; color: black; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .wrong-btn { background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-right: 5px; }
-        .selected-correct { border: 2px solid #00ff88; background: #004422; }
-    </style>
 </head>
 <body>
     <div id="app" class="container">
         <h1 class="gold-text">DIPLOMATIC HUB</h1>
 
         <div id="category-screen" class="screen">
-            <h3>اختر نوع التحدي</h3>
+            <h3>اختر نوع التحدي (80 سؤال متاح)</h3>
             <button class="game-card" onclick="setGame('kora')">⚽ كورة</button>
             <button class="game-card" onclick="setGame('fawazir')">🌙 فوازير</button>
             <button class="game-card" onclick="setGame('no_repeat')">🚫 بدون تكرار</button>
@@ -32,41 +26,39 @@
 
         <div id="online-setup-screen" class="screen hidden">
             <input type="text" id="user-name" placeholder="اسمك">
-            <button class="action-btn" onclick="initRoom('create')">➕ إنشاء غرفة (محكم)</button>
+            <button class="action-btn" onclick="initRoom('create')">➕ إنشاء غرفة</button>
             <input type="text" id="join-input" placeholder="كود الغرفة">
-            <button class="game-card" onclick="initRoom('join')">🔗 انضمام كلاعب</button>
+            <button class="game-card" onclick="initRoom('join')">🔗 انضمام</button>
             <button class="back-nav-btn" onclick="showScreen('category-screen')">🔙 رجوع</button>
         </div>
 
         <div id="lobby-screen" class="screen hidden">
             <h1 id="room-display" class="gold-text" style="font-size: 3rem;"></h1>
             <div class="glass-box"><div id="players-list"></div></div>
-            <button id="host-start-btn" class="action-btn hidden" onclick="triggerStart()">ابدأ المواجهة 🚀</button>
+            <button id="host-start-btn" class="action-btn hidden" onclick="triggerStart()">ابدأ 🚀</button>
         </div>
 
         <div id="game-screen" class="screen hidden">
             <p id="q-info" style="color:var(--gold); font-weight:bold;"></p>
             <div class="glass-box"><h3 id="question-text">...</h3></div>
             <div id="input-zone">
-                <input type="text" id="ans-input" placeholder="اكتب إجابتك هنا...">
+                <input type="text" id="ans-input" placeholder="اكتب إجابتك (السيستم ذكي في الحروف)">
                 <button class="action-btn" onclick="submitProcess()">إرسال ✅</button>
             </div>
-            <div id="waiting-msg" class="hidden">تم الإرسال.. بانتظار البقية والتحكيم ⚖️</div>
+            <div id="waiting-msg" class="hidden">تم الإرسال.. بانتظار البقية ⏳</div>
         </div>
 
         <div id="result-screen" class="screen hidden">
-            <h3 class="gold-text">التحكيم والنتائج ⚖️</h3>
-            <div id="judging-panel" class="glass-box">
-                </div>
+            <h3 class="gold-text">ترتيب الأبطال 🏆</h3>
+            <div id="leaderboard" class="glass-box"></div>
             <div class="glass-box" style="border: 1px solid #00ff88;">
-                <p>الإجابة النموذجية:</p>
-                <h2 id="correct-reveal" style="color:#00ff88; font-size: 1.2rem;"></h2>
+                <p>كل الإجابات الصحيحة الممكنة:</p>
+                <div id="correct-reveal" style="color:#00ff88; font-size: 1.1rem; line-height: 1.6;"></div>
             </div>
             <div id="host-controls" class="hidden">
                 <button class="action-btn" onclick="triggerNext()">السؤال التالي ➡️</button>
-                <button class="game-card" onclick="location.reload()">🏠 إنهاء الجيم</button>
+                <button class="game-card" onclick="location.reload()">🏠 إنهاء</button>
             </div>
-            <div id="guest-waiting" class="hidden">المحكم يراجع الإجابات الآن...</div>
         </div>
     </div>
 
@@ -74,7 +66,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
 
     <script>
-        // ... (نفس إعدادات Firebase السابقة) ...
         const firebaseConfig = {
             apiKey: "AIzaSyAESCjnKsQxNX_IKH9Fm_ePpIsbb9C_NsE",
             authDomain: "diplomatic-games.firebaseapp.com",
@@ -88,8 +79,97 @@
         const db = firebase.database();
 
         let me = { name: '', room: '', isHost: false, gameType: '', maxQ: 20, score: 0 };
-        const dataBank = { /* ... نفس بنك الأسئلة الـ 80 المذكور سابقاً ... */ };
-        // (ملاحظة: تأكد من نسخ مصفوفة الـ dataBank من الرد السابق لتعمل الأسئلة)
+        
+        const dataBank = {
+            kora: [
+                {q:"من هداف العالم التاريخي؟", a:["رونالدو", "كريستيانو", "الدون", "CR7"]},
+                {q:"نادي القرن في أفريقيا؟", a:["الاهلي", "النادي الاهلي", "الشياطين الحمر"]},
+                {q:"بطل مونديال 2022؟", a:["الارجنتين", "ارجنتين", "ميسي"]},
+                {q:"مدرب مانشستر سيتي؟", a:["غوارديولا", "بيب", "جوارديولا"]},
+                {q:"أين يلعب محمد صلاح؟", a:["ليفربول", "ليفر", "انجلترا"]},
+                {q:"ملقب بالبرغوث؟", a:["ميسي", "ليونيل"]},
+                {q:"بطل يورو 2024؟", a:["اسبانيا", "المتادور"]},
+                {q:"أين يلعب مبابي؟", a:["ريال مدريد", "الريال", "مدريد"]},
+                {q:"ملعب برشلونة؟", a:["كامب نو", "نيوكامب", "سبوتيفاي"]},
+                {q:"لقب منتخب المغرب؟", a:["اسود الاطلس", "المغرب"]},
+                {q:"من هو الظاهرة؟", a:["رونالدو البرازيلي", "رونالدو", "نازاريو"]},
+                {q:"بطل الـ UCL 2024؟", a:["ريال مدريد", "الملكي"]},
+                {q:"أسرع لاعب حاليا؟", a:["مبابي", "كيليان"]},
+                {q:"عدد تبديلات الماتش؟", a:["5", "خمسة"]},
+                {q:"موقع ملعب ماراكانا؟", a:["البرازيل", "برازيل"]},
+                {q:"بطل الكان 2023؟", a:["ساحل العاج", "كوت ديفوار"]},
+                {q:"فائز مونديال 2010؟", a:["اسبانيا", "اسبانيا"]},
+                {q:"أين سيلعب فينيسيوس؟", a:["ريال مدريد", "الريال"]},
+                {q:"صاحب القاضية ممكن؟", a:["افشة", "قفشة", "محمد مجدي"]},
+                {q:"مستضيف مونديال 2026؟", a:["امريكا", "كندا", "المكسيك"]}
+            ],
+            fawazir: [
+                {q:"شيء يطير بلا أجنحة؟", a:["الدخان", "دخان"]},
+                {q:"له أسنان ولا يعض؟", a:["المشط", "مشط"]},
+                {q:"شيء يكتب ولا يقرأ؟", a:["القلم", "قلم"]},
+                {q:"يحفظ الماء وهو مثقوب؟", a:["الاسفنج", "اسفنج"]},
+                {q:"يسمع بلا أذن ويتكلم بلا لسان؟", a:["التليفون", "الهاتف", "الموبايل"]},
+                {q:"له رأس ولا عين له؟", a:["الدبوس", "مسمار"]},
+                {q:"كلما زاد نقص؟", a:["العمر", "عمر"]},
+                {q:"لا يبرد في الثلاجة؟", a:["الفلفل", "شطة", "الحراق"]},
+                {q:"يتحرك حولك ولا تراه؟", a:["الهواء", "ريح", "اكسجين"]},
+                {q:"له عين ولا يرى؟", a:["الابرة", "ابرة"]},
+                {q:"قلبه يأكل قشره؟", a:["الشمعة", "شمعة"]},
+                {q:"كم شهر فيه 28 يوم؟", a:["كل الشهور", "12", "اثني عشر"]},
+                {q:"تذبحه وتبكي عليه؟", a:["البصل", "بصل"]},
+                {q:"كلمة تبطل لو نطقنا بها؟", a:["الصمت", "سكوت"]},
+                {q:"يستخدمه الناس أكثر منك؟", a:["اسمك", "الاسم"]},
+                {q:"مدن بلا بيوت؟", a:["الخريطة", "خريطة"]},
+                {q:"لا يمشي إلا بالضرب؟", a:["المسمار", "مسمار"]},
+                {q:"يقرصك ولا تراه؟", a:["الجوع", "البرد"]},
+                {q:"له أرجل ولا يمشي؟", a:["الكرسي", "طاولة"]},
+                {q:"يظهر في الليل ويختفي في النهار؟", a:["القمر", "نجوم"]}
+            ],
+            no_repeat: [
+                {q:"اذكر فاكهة صيفية", a:["بطيخ", "مانجو", "مانجا", "عنب", "خوخ", "تين", "مشمش", "كنتالوب"]},
+                {q:"ماركة موبايلات", a:["ايفون", "سامسونج", "شاومي", "هواوي", "اوبو", "ريلمي", "نوكيا"]},
+                {q:"دولة أفريقية", a:["مصر", "الجزائر", "تونس", "المغرب", "نيجيريا", "السنغال", "غانا"]},
+                {q:"نادي أوروبي", a:["ريال مدريد", "برشلونة", "ليفربول", "بايرن", "يونايتد", "سيتي", "ارسنال"]},
+                {q:"خضار أخضر", a:["خيار", "خس", "ملوخية", "جرجير", "فلفل", "بامية", "فاصوليا"]},
+                {q:"اسم نبي", a:["محمد", "يوسف", "موسى", "عيسى", "ابراهيم", "نوح", "ادم"]},
+                {q:"عاصمة عربية", a:["القاهرة", "الرياض", "القدس", "عمان", "بغداد", "دمشق", "بيروت"]},
+                {q:"لاعب كورة عالمي", a:["ميسي", "رونالدو", "صلاح", "نيمار", "هالاند", "مبابي", "مودريتش"]},
+                {q:"كوكب سيار", a:["المريخ", "المشتري", "الزهرة", "زحل", "الارض", "عطارد", "نبتون"]},
+                {q:"فيلم كرتون", a:["توم وجيري", "سبونج بوب", "سيمبا", "نيمو", "باغز باني", "ميكي"]},
+                {q:"تطبيق هاتف", a:["واتساب", "فيسبوك", "تيك توك", "انستجرام", "تليجرام", "سناب"]},
+                {q:"حيوان غابة", a:["اسد", "نمر", "فهد", "ذئب", "دب", "قرد", "غزال"]},
+                {q:"لغة برمجة", a:["بايثون", "جافا", "سي بلس", "جافا سكريبت", "بي اتش بي"]},
+                {q:"مادة علمية", a:["فيزياء", "كيمياء", "احياء", "رياضيات", "فلك", "جيولوجيا"]},
+                {q:"عملة", a:["دولار", "جنيه", "يورو", "ريال", "دينار", "درهم", "ين"]},
+                {q:"صحابي", a:["علي", "عمر", "عثمان", "ابو بكر", "خالد بن الوليد", "حمزة"]},
+                {q:"لون", a:["احمر", "ازرق", "اخضر", "اصفر", "اسود", "ابيض", "بنفسجي"]},
+                {q:"موقع تواصل", a:["فيسبوك", "تويتر", "لينكد ان", "ريديت", "تيك توك"]},
+                {q:"عضو بالجسم", a:["قلب", "عين", "كبد", "رئة", "معدة", "عقل", "لسان"]},
+                {q:"مدينة مصرية", a:["القاهرة", "الاسكندرية", "اسوان", "الاقصر", "شرم الشيخ", "الغردقة"]}
+            ],
+            what_if: [
+                {q:"لو لقيت محفظة؟", a:["هرجعها", "اسلمها", "ادور على صاحبها"]},
+                {q:"لو بقيت رئيس؟", a:["هوزع فلوس", "هبني مدارس", "هصلح البلد"]},
+                {q:"لو تقدر تطير؟", a:["هسافر", "هطير فوق البيت", "هروح الفضاء"]},
+                {q:"لو كسبت مليون؟", a:["هتبرع", "هشتري بيت", "هفتح مشروع"]},
+                {q:"لو بقيت غير مرئي؟", a:["هدخل السينما", "هراقب الناس", "هسمع الاسرار"]},
+                {q:"لو رجعت للماضي؟", a:["هذاكر", "هغير قراري", "هشوف جدي"]},
+                {q:"لو قابلت صلاح؟", a:["هتصور", "هطلب تيشرت", "هسلم عليه"]},
+                {q:"لو عشت في المريخ؟", a:["هبني خيمة", "هزرع بطاطس", "هستكشف"]},
+                {q:"لو بقيت مدير؟", a:["هرفد الناس", "هزود المرتبات", "هعمل حفلة"]},
+                {q:"لو معاك مصباح؟", a:["هطلب مال", "هطلب صحة", "هطلب سعادة"]},
+                {q:"لو بقيت مدرب؟", a:["هاخد الدوري", "هجيب لعيبة", "هطور الدفاع"]},
+                {q:"لو غيرت اسمك؟", a:["هسميه رعد", "هسميه صقر", "مش هغيره"]},
+                {q:"لو معاك مفتاح؟", a:["هفتح الكنز", "هفتح كل الابواب", "هعرف الحقيقة"]},
+                {q:"لو بقيت خارق؟", a:["هحمي الناس", "هطير", "هبقى قوي"]},
+                {q:"لو فهمت الحيوان؟", a:["هصاحب الاسد", "هكلم قطتي", "هسأل الطيور"]},
+                {q:"لو عشت وحدك؟", a:["هقرأ", "هنام كتير", "هتفرج على افلام"]},
+                {q:"لو بقيت طباخ؟", a:["هعمل بيتزا", "هعمل وليمة", "هفتح مطعم"]},
+                {q:"لو سافرت للمستقبل؟", a:["هعرف حظي", "هجيب اختراعات", "هشوف الدنيا"]},
+                {q:"لو بقيت طفل؟", a:["هلعب طول اليوم", "مش هفكر", "هروح الملاهي"]},
+                {q:"لو معاك آلة زمن؟", a:["هروح الفراعنة", "هروح المستقبل", "هغير التاريخ"]}
+            ]
+        };
 
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -116,20 +196,20 @@
                 const data = snap.val(); if(!data) return;
                 document.getElementById('room-display').innerText = me.room;
                 
-                // تحديث اللوبي
                 const pList = document.getElementById('players-list');
-                pList.innerHTML = "";
+                const board = document.getElementById('leaderboard');
+                pList.innerHTML = ""; board.innerHTML = "";
                 let allDone = true; let count = 0;
                 
                 for(let p in data.players) {
                     count++;
                     pList.innerHTML += `<p>👤 ${p}: ${data.players[p].score}ن</p>`;
+                    board.innerHTML += `<p style="display:flex; justify-content:space-between;"><span>${p}</span><span>${data.players[p].score}ن</span></p>`;
                     if(!data.players[p].submitted) allDone = false;
                 }
 
-                // الانتقال للنتائج (التحكيم) لما الكل يخلص
                 if(allDone && count > 0 && data.status === 'playing' && me.isHost) {
-                    db.ref('party/' + me.room).update({ status: 'judging' });
+                    db.ref('party/' + me.room).update({ status: 'results' });
                 }
 
                 if(data.status === 'playing') {
@@ -138,50 +218,41 @@
                     document.getElementById('waiting-msg').classList.add('hidden');
                     document.getElementById('question-text').innerText = dataBank[data.game][data.qIdx].q;
                     document.getElementById('q-info').innerText = `سؤال ${data.qIdx + 1} من ${data.maxQ}`;
-                } else if(data.status === 'judging') {
+                } else if(data.status === 'results') {
                     showScreen('result-screen');
-                    renderJudgingPanel(data);
-                    document.getElementById('correct-reveal').innerText = dataBank[data.game][data.qIdx].a.join(" / ");
+                    const ansList = dataBank[data.game][data.qIdx].a;
+                    document.getElementById('correct-reveal').innerHTML = ansList.map(a => `• ${a}`).join("<br>");
                     document.getElementById('host-controls').classList.toggle('hidden', !me.isHost);
-                    document.getElementById('guest-waiting').classList.toggle('hidden', me.isHost);
                 }
                 if(me.isHost) document.getElementById('host-start-btn').classList.toggle('hidden', data.status !== 'lobby');
             });
         }
 
-        function renderJudgingPanel(data) {
-            const panel = document.getElementById('judging-panel');
-            panel.innerHTML = "<h4>إجابات اللاعبين:</h4>";
-            for(let p in data.players) {
-                const pData = data.players[p];
-                const div = document.createElement('div');
-                div.className = 'player-card';
-                div.innerHTML = `<span><strong>${p}:</strong> ${pData.lastAns || 'لم يجاوب'}</span>`;
-                
-                if(me.isHost) {
-                    const btn = document.createElement('button');
-                    btn.className = 'correct-btn';
-                    btn.innerText = "صح ✅";
-                    btn.onclick = () => awardPoint(p, pData.score);
-                    div.appendChild(btn);
-                } else {
-                    div.innerHTML += `<span>(${pData.score}ن)</span>`;
-                }
-                panel.appendChild(div);
-            }
+        // دالة ذكية لمقارنة الكلمات (تتجاهل فرق حرف واحد)
+        function isCloseEnough(str1, str2) {
+            str1 = str1.toLowerCase().trim();
+            str2 = str2.toLowerCase().trim();
+            if (str1 === str2) return true;
+            if (str1.includes(str2) || str2.includes(str1)) return true;
+            // السماح بفرق طول بسيط (مانجا/مانجو)
+            let diff = Math.abs(str1.length - str2.length);
+            return diff <= 1 && str1.substring(0,3) === str2.substring(0,3);
         }
-
-        window.awardPoint = (playerName, currentScore) => {
-            db.ref('party/' + me.room + '/players/' + playerName).update({ score: currentScore + 10 });
-            alert(`تم إعطاء 10 نقاط لـ ${playerName}`);
-        };
 
         window.submitProcess = () => {
             const val = document.getElementById('ans-input').value.trim();
-            db.ref('party/' + me.room + '/players/' + me.name).update({ submitted: true, lastAns: val });
-            document.getElementById('input-zone').classList.add('hidden');
-            document.getElementById('waiting-msg').classList.remove('hidden');
-            document.getElementById('ans-input').value = "";
+            db.ref('party/' + me.room).once('value', s => {
+                const currentQ = dataBank[s.val().game][s.val().qIdx];
+                let isCorrect = currentQ.a.some(correctAns => isCloseEnough(val, correctAns));
+
+                if(isCorrect && val !== "") {
+                    me.score += 10;
+                }
+                db.ref('party/' + me.room + '/players/' + me.name).update({ score: me.score, submitted: true, lastAns: val });
+                document.getElementById('input-zone').classList.add('hidden');
+                document.getElementById('waiting-msg').classList.remove('hidden');
+                document.getElementById('ans-input').value = "";
+            });
         };
 
         window.triggerStart = () => {
@@ -191,12 +262,8 @@
         window.triggerNext = () => {
             db.ref('party/' + me.room).once('value', s => {
                 let nextIdx = s.val().qIdx + 1;
-                if(nextIdx >= s.val().maxQ) { alert("انتهى الجيم!"); location.reload(); return; }
-                
-                // ريست لحالة اللاعبين للسؤال الجديد
-                for(let p in s.val().players) {
-                    db.ref('party/' + me.room + '/players/' + p).update({ submitted: false, lastAns: '' });
-                }
+                if(nextIdx >= s.val().maxQ) { alert("الجيم خلص!"); location.reload(); return; }
+                for(let p in s.val().players) db.ref('party/' + me.room + '/players/' + p).update({ submitted: false });
                 db.ref('party/' + me.room).update({ status: 'playing', qIdx: nextIdx });
             });
         };
