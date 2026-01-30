@@ -19,7 +19,7 @@
             <button class="action-btn" onclick="createNewRoom()">➕ إنشاء غرفة جديدة</button>
             <div style="margin: 20px 0; color: #888;">أو</div>
             <input type="text" id="room-input" placeholder="ادخل كود الغرفة">
-            <button class="game-card" onclick="joinExistingRoom()">🔗 دخول غرفة</button>
+            <button class="game-card" onclick="joinRoom()">🔗 دخول غرفة</button>
             <button class="back-nav-btn" onclick="location.reload()">رجوع</button>
         </div>
 
@@ -32,25 +32,25 @@
         </div>
 
         <div id="setup-screen" class="screen hidden">
-            <p>عدد الأبطال (2-10):</p>
-            <input type="number" id="player-count" min="2" max="10" value="2" onchange="makeNameInputs()">
+            <p>عدد الأبطال:</p>
+            <input type="number" id="player-count" min="2" max="10" value="2" onchange="makeInputs()">
             <div id="names-container">
                 <input type="text" placeholder="اسم اللاعب 1" class="p-name">
                 <input type="text" placeholder="اسم اللاعب 2" class="p-name">
             </div>
-            <button class="action-btn" onclick="startTheGame()">ابدأ المعركة</button>
+            <button class="action-btn" onclick="startNow()">ابدأ المعركة</button>
         </div>
 
         <div id="game-screen" class="screen hidden">
             <div id="turn-info" class="gold-text">دور: <span id="current-p"></span></div>
             <div class="glass-box">
-                <p id="q-text">جاري التحميل...</p>
+                <p id="q-text"></p>
                 <p id="a-text" class="hidden-ans hidden"></p>
             </div>
-            <button id="show-ans-btn" class="action-btn" onclick="reveal()">إظهار الإجابة</button>
+            <button id="show-ans-btn" class="action-btn" onclick="showAns()">إظهار الإجابة</button>
             <div id="score-controls" class="hidden" style="display:flex; gap:10px; margin-top:15px;">
-                <button class="btn-success" onclick="recordPoint(true)" style="background:#28a745; flex:1; padding:15px; border-radius:10px; border:none; color:white;">صح ✅</button>
-                <button class="btn-danger" onclick="recordPoint(false)" style="background:#dc3545; flex:1; padding:15px; border-radius:10px; border:none; color:white;">غلط ❌</button>
+                <button class="btn-success" onclick="nextP(true)">صح ✅</button>
+                <button class="btn-danger" onclick="nextP(false)">غلط ❌</button>
             </div>
         </div>
     </div>
