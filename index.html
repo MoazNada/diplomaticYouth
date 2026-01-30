@@ -2,20 +2,45 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ألعاب دبلوماسية أونلاين</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIPLOMATIC HUB - ألعاب دبلوماسية</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="app">
-        <h1>DIPLOMATIC GAMES</h1>
-        <div id="connection-menu">
-            <button onclick="setMode('local')">لعب محلي</button>
-            <button onclick="setMode('online')">لعب أونلاين</button>
+    <div id="app" class="container">
+        <header>
+            <h1 class="gold-text">DIPLOMATIC HUB</h1>
+        </header>
+
+        <div id="connection-menu" class="screen">
+            <button class="game-card" onclick="setMode('local')">🏠 لعب محلي (معاك في البيت)</button>
+            <button class="game-card" onclick="setMode('online')">🌐 لعب أونلاين (مع أصحابك)</button>
         </div>
-        <div id="online-screen" class="hidden">
-            <button onclick="createRoom()">إنشاء غرفة</button>
+
+        <div id="online-screen" class="screen hidden">
+            <input type="text" id="room-id" placeholder="ادخل كود الغرفة">
+            <button class="action-btn" onclick="joinRoom()">دخول الغرفة</button>
+            <hr>
+            <button class="back-nav-btn" onclick="createRoom()">إنشاء غرفة جديدة +</button>
+        </div>
+
+        <div id="main-menu" class="screen hidden">
+            <div class="menu-grid">
+                <button class="game-card" onclick="startGame('kora')">⚽ تحدي الكورة</button>
+                <button class="game-card" onclick="startGame('spy')">🕵️ مين الجاسوس؟</button>
+                <button class="game-card" onclick="startGame('fawazir')">🌙 فوازير رمضان</button>
+            </div>
+        </div>
+
+        <div id="game-screen" class="screen hidden">
+            <div id="question-box" class="game-card">
+                <p id="question-text">استعد للبدء...</p>
+            </div>
+            <button class="action-btn" onclick="nextQuestion()">السؤال التالي</button>
+            <button class="back-nav-btn" onclick="location.reload()">العودة للرئيسية</button>
         </div>
     </div>
+
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <script src="script.js"></script>
