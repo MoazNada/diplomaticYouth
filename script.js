@@ -1,4 +1,3 @@
-// إعدادات Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAESCjnKsQxNX_IKH9Fm_ePpIsbb9C_NsE",
   authDomain: "diplomatic-games.firebaseapp.com",
@@ -8,109 +7,81 @@ const firebaseConfig = {
   appId: "1:726415224604:web:3f436ef230254a5ee914d9",
   databaseURL: "https://diplomatic-games-default-rtdb.firebaseio.com"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// متغيرات اللعبة
-let players = [];
-let scores = {};
-let gameData = { kora: [], fawazir: [], spy: [] };
-let currentRound = 0;
-let currentPlayerIdx = 0;
-let selectedCategory = '';
+let state = { conn: '', cat: '', players: [], scores: {}, round: 0, currentIdx: 0 };
+const questions = {
+    kora: [
+        {q: "من هو الهداف التاريخي لكأس العالم؟", a: "ميروسلاف كلوزه (16 هدف)"},
+        {q: "نادي يلقب بـ 'قلعة الكؤوس'؟", a: "الأهلي السعودي"},
+        {q: "من فاز بكأس العالم 2014؟", a: "ألمانيا"},
+        {q: "كم عدد بطولات الزمالك في دوري أبطال أفريقيا؟", a: "5 بطولات"},
+        {q: "من هو مدرب منتخب مصر الحالي؟", a: "حسام حسن"}
+    ],
+    fawazir: [
+        {q: "شيء تلمسه ولا تراه، فما هو؟", a: "الهواء"},
+        {q: "ما هو الشيء الذي ينبض بلا قلب؟", a: "الساعة"},
+        {q: "حاجة لها سنان ومبتعضش؟", a: "المشط"}
+    ],
+    spy: ["مستشفى", "مطار", "مطعم", "مدرسة", "ملعب", "سينما", "حديقة"]
+};
 
-// 10 أسئلة لكل نوع (تم التأكد من الربط)
-gameData.kora = [
-    {q: "من هو الهداف التاريخي للمنتخبات؟", a: "كريستيانو رونالدو"},
-    {q: "نادي يلقب بـ 'العميد' في السعودية؟", a: "الاتحاد"},
-    {q: "من فاز بكأس العالم 2010؟", a: "إسبانيا"},
-    {q: "أين يلعب محمد صلاح؟", a: "ليفربول"},
-    {q: "كم عدد لاعبي فريق كرة القدم؟", a: "11 لاعب"},
-    {q: "من هو بطل دوري أبطال أوروبا 2024؟", a: "ريال مدريد"},
-    {q: "أين أقيم كأس العالم 2022؟", a: "قطر"},
-    {q: "لاعب يلقب بـ 'البرغوث'؟", a: "ليونيل ميسي"},
-    {q: "ما هو ملعب نادي الزمالك؟", a: "ستاد القاهرة"},
-    {q: "من هو مدرب الأهلي الحالي؟", a: "مارسيل كولر"}
-];
-gameData.fawazir = [
-    {q: "شيء يكتب ولا يقرأ؟", a: "القلم"},
-    {q: "شيء ينبض بلا قلب؟", a: "الساعة"},
-    {q: "كلما زاد نقص، فما هو؟", a: "العمر"},
-    {q: "له أسنان ولا يعض؟", a: "المشط"},
-    {q: "يخترق الزجاج ولا يكسره؟", a: "الضوء"},
-    {q: "له عين واحدة ولا يرى؟", a: "الإبرة"},
-    {q: "يمشي بلا أرجل؟", a: "الزمن"},
-    {q: "شهر هجري نصوم فيه؟", a: "رمضان"},
-    {q: "بحر لا يوجد فيه ماء؟", a: "البحر على الخريطة"},
-    {q: "شيء يملك مدن بلا بيوت؟", a: "الخريطة"}
-];
-gameData.spy = ["مطار", "مستشفى", "ملعب", "سيرك", "مطعم", "حديقة", "مدرسة", "مسبح", "سينما", "بنك"];
+function setConnection(c) { state.conn = c; move('connection-screen', 'category-screen'); }
+function setCategory(cat) { state.cat = cat; move('category-screen', 'setup-screen'); generateInputs(); }
 
-// وظائف النظام
-function generateNameInputs() {
-    const val = document.getElementById('player-count').value;
+function generateInputs() {
+    const n = document.getElementById('player-count').value;
     const container = document.getElementById('names-container');
     container.innerHTML = '';
-    for(let i=1; i<=val; i++) {
-        container.innerHTML += `<input type="text" placeholder="اسم اللاعب ${i}" class="player-name-input">`;
-    }
+    for(let i=1; i<=n; i++) container.innerHTML += `<input type="text" placeholder="اسم اللاعب ${i}" class="p-name">`;
 }
 
-function savePlayersAndGoToMenu() {
-    const inputs = document.querySelectorAll('.player-name-input');
-    players = Array.from(inputs).map((inp, i) => inp.value || `لاعب ${i+1}`);
-    players.forEach(p => scores[p] = 0);
-    document.getElementById('setup-screen').classList.add('hidden');
-    document.getElementById('main-menu').classList.remove('hidden');
-}
-
-function startGame(type) {
-    selectedCategory = type;
-    document.getElementById('main-menu').classList.add('hidden');
-    document.getElementById('game-screen').classList.remove('hidden');
+function startBattle() {
+    const inputs = document.querySelectorAll('.p-name');
+    state.players = Array.from(inputs).map((inp, i) => inp.value || `لاعب ${i+1}`);
+    state.players.forEach(p => state.scores[p] = 0);
+    move('setup-screen', 'game-screen');
     loadTurn();
 }
 
 function loadTurn() {
-    if (currentRound >= 10) return endGame();
-    document.getElementById('current-player-display').innerText = players[currentPlayerIdx];
-    document.getElementById('answer-text').classList.add('hidden');
-    document.getElementById('score-btns').classList.add('hidden');
-    document.getElementById('show-btn').classList.remove('hidden');
+    document.getElementById('current-p').innerText = state.players[state.currentIdx];
+    document.getElementById('a-text').classList.add('hidden');
+    document.getElementById('score-controls').classList.add('hidden');
+    document.getElementById('show-ans-btn').classList.remove('hidden');
 
-    if(selectedCategory === 'spy') {
-        document.getElementById('question-text').innerText = "المكان السري هو: " + gameData.spy[currentRound];
-        document.getElementById('answer-text').innerText = "الجاسوس عليه التخمين!";
+    if(state.cat === 'spy') {
+        const place = questions.spy[Math.floor(Math.random()*questions.spy.length)];
+        document.getElementById('q-text').innerText = "المكان السري (لا تخبر أحداً): " + place;
+        document.getElementById('a-text').innerText = "الآن ابدأ بالأسئلة لكشف الجاسوس!";
     } else {
-        const item = gameData[selectedCategory][currentRound];
-        document.getElementById('question-text').innerText = item.q;
-        document.getElementById('answer-text').innerText = "الإجابة: " + item.a;
+        const item = questions[state.cat][state.round % questions[state.cat].length];
+        document.getElementById('q-text').innerText = item.q;
+        document.getElementById('a-text').innerText = "الإجابة: " + item.a;
     }
 }
 
-function revealAnswer() {
-    document.getElementById('answer-text').classList.remove('hidden');
-    document.getElementById('show-btn').classList.add('hidden');
-    document.getElementById('score-btns').classList.remove('hidden');
+function showAnswer() {
+    document.getElementById('a-text').classList.remove('hidden');
+    document.getElementById('show-ans-btn').classList.add('hidden');
+    document.getElementById('score-controls').classList.remove('hidden');
 }
 
-function handleScore(isCorrect) {
-    if(isCorrect) scores[players[currentPlayerIdx]]++;
-    
-    currentPlayerIdx++;
-    if(currentPlayerIdx >= players.length) {
-        currentPlayerIdx = 0;
-        currentRound++;
-    }
-
-    if(currentRound < 10) loadTurn();
-    else endGame();
+function handleScore(isWin) {
+    if(isWin) state.scores[state.players[state.currentIdx]]++;
+    state.currentIdx++;
+    if(state.currentIdx >= state.players.length) { state.currentIdx = 0; state.round++; }
+    if(state.round < 5) loadTurn(); else showFinal();
 }
 
-function endGame() {
-    document.getElementById('game-screen').classList.add('hidden');
-    document.getElementById('result-screen').classList.remove('hidden');
-    let html = players.map(p => `<p>${p}: ${scores[p]} نقطة</p>`).join('');
+function showFinal() {
+    move('game-screen', 'result-screen');
+    let html = state.players.map(p => `<p>${p}: ${state.scores[p]} نقطة</p>`).join('');
     document.getElementById('final-table').innerHTML = html;
+}
+
+function move(oldS, newS) {
+    document.getElementById(oldS).classList.add('hidden');
+    document.getElementById(newS).classList.remove('hidden');
 }
