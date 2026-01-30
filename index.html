@@ -3,60 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIPLOMATIC HUB</title>
-    <link rel="stylesheet" href="style.css">
+    <title>DIPLOMATIC HUB PRO</title>
+    <style>
+        :root { --gold: #ffd700; --dark: #050505; }
+        body { background: #000; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
+        .container { max-width: 400px; margin: auto; }
+        .gold-text { color: var(--gold); text-shadow: 0 0 10px var(--gold); font-size: 2rem; }
+        .game-card { 
+            background: rgba(255,255,255,0.05); border: 1px solid var(--gold); 
+            padding: 20px; margin: 15px 0; border-radius: 15px; width: 100%; 
+            color: white; font-size: 1.1rem; cursor: pointer; transition: 0.3s;
+        }
+        .game-card:hover { background: rgba(255,215,0,0.1); }
+        .action-btn { background: var(--gold); color: black; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .hidden { display: none !important; }
+        .glass-box { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 15px; border: 1px dashed var(--gold); margin: 20px 0; }
+        input { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; box-sizing: border-box; }
+    </style>
 </head>
 <body>
-    <div id="app" class="container">
+
+    <div class="container">
         <h1 class="gold-text">DIPLOMATIC HUB</h1>
 
         <div id="connection-screen" class="screen">
-            <button class="game-card shadow-gold" onclick="openLobby()">🌐 لعب أونلاين</button>
-            <button class="game-card shadow-gold" onclick="openCategories()">🏠 لعب محلي</button>
+            <button class="game-card" onclick="showScreen('online-lobby')">🌐 لعب أونلاين</button>
+            <button class="game-card" onclick="showScreen('category-screen')">🏠 لعب محلي</button>
         </div>
 
         <div id="online-lobby" class="screen hidden">
             <button class="action-btn" onclick="createNewRoom()">➕ إنشاء غرفة جديدة</button>
-            <div style="margin: 20px 0; color: #888;">أو</div>
+            <p style="margin:20px 0; color:#888;">أو</p>
             <input type="text" id="room-input" placeholder="ادخل كود الغرفة">
             <button class="game-card" onclick="joinRoom()">🔗 دخول غرفة</button>
-            <button class="back-nav-btn" onclick="location.reload()">رجوع</button>
+            <button onclick="showScreen('connection-screen')" style="background:none; border:none; color:var(--gold); cursor:pointer; margin-top:10px;">رجوع</button>
         </div>
 
         <div id="category-screen" class="screen hidden">
-            <h3>اختر نوع التحدي</h3>
-            <button class="game-card" onclick="goToSetup('kora')">⚽ تحدي الكورة</button>
-            <button class="game-card" onclick="goToSetup('fawazir')">🌙 فوازير رمضان</button>
-            <button class="game-card" onclick="goToSetup('spy')">🕵️ مين الجاسوس؟</button>
-            <button class="back-nav-btn" onclick="location.reload()">رجوع</button>
+            <h3>اختر اللعبة</h3>
+            <button class="game-card" onclick="setGame('kora')">⚽ تحدي الكورة</button>
+            <button class="game-card" onclick="setGame('fawazir')">🌙 فوازير رمضان</button>
+            <button class="game-card" onclick="setGame('spy')">🕵️ مين الجاسوس؟</button>
         </div>
 
         <div id="setup-screen" class="screen hidden">
-            <p>عدد الأبطال:</p>
-            <input type="number" id="player-count" min="2" max="10" value="2" onchange="makeInputs()">
-            <div id="names-container">
-                <input type="text" placeholder="اسم اللاعب 1" class="p-name">
-                <input type="text" placeholder="اسم اللاعب 2" class="p-name">
+            <p>عدد اللاعبين:</p>
+            <input type="number" id="p-count" value="2" min="2" max="10" onchange="genInputs()">
+            <div id="names-box">
+                <input type="text" placeholder="اسم اللاعب 1" class="p-name-in">
+                <input type="text" placeholder="اسم اللاعب 2" class="p-name-in">
             </div>
-            <button class="action-btn" onclick="startNow()">ابدأ المعركة</button>
+            <button class="action-btn" onclick="startBattle()">ابدأ اللعب</button>
         </div>
 
         <div id="game-screen" class="screen hidden">
-            <div id="turn-info" class="gold-text">دور: <span id="current-p"></span></div>
+            <p class="gold-text" style="font-size: 1.2rem;">دور: <span id="player-display"></span></p>
             <div class="glass-box">
-                <p id="q-text"></p>
-                <p id="a-text" class="hidden-ans hidden"></p>
+                <p id="question-text"></p>
+                <p id="answer-text" class="hidden" style="color:#00ff88; margin-top:10px;"></p>
             </div>
-            <button id="show-ans-btn" class="action-btn" onclick="showAns()">إظهار الإجابة</button>
-            <div id="score-controls" class="hidden" style="display:flex; gap:10px; margin-top:15px;">
-                <button class="btn-success" onclick="nextP(true)">صح ✅</button>
-                <button class="btn-danger" onclick="nextP(false)">غلط ❌</button>
+            <button id="show-btn" class="action-btn" onclick="revealAnswer()">إظهار الإجابة</button>
+            <div id="score-btns" class="hidden" style="display:flex; gap:10px;">
+                <button class="action-btn" style="background:#28a745;" onclick="handleNext(true)">صح ✅</button>
+                <button class="action-btn" style="background:#dc3545;" onclick="handleNext(false)">خطأ ❌</button>
             </div>
         </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
-    <script src="script.js"></script>
+
+    <script>
+        // إعدادات Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAESCjnKsQxNX_IKH9Fm_ePpIsbb9C_NsE",
+            authDomain: "diplomatic-games.firebaseapp.com",
+            projectId: "diplomatic-games",
+            storageBucket: "diplomatic-games.firebasestorage.app",
+            messagingSenderId: "726415224604",
+            appId: "1:726415224604:web:3f436ef230254a5ee914d9",
+            databaseURL: "https://diplomatic-games-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let game = { type: '', players: [], scores: {}, currentIdx: 0, round: 0 };
+        const data = {
+            kora: [{q:"هداف العالم؟", a:"رونالدو"}, {q:"بطل 2022؟", a:"الأرجنتين"}],
+            fawazir: [{q:"يكتب ولا يقرأ؟", a:"القلم"}],
+            spy: ["مطار", "مستشفى", "ملعب"]
+        };
+
+        // وظائف التنقل
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function createNewRoom() {
+            const rId = Math.random().toString(36).substring(2, 6).toUpperCase();
+            db.ref('rooms/' + rId).set({ status: 'waiting' }).then(() => {
+                alert("كود غرفتك: " + rId);
+                showScreen('category-screen');
+            });
+        }
+
+        function setGame(t) { game.type = t; showScreen('setup-screen'); }
+
+        function genInputs() {
+            const n = document.getElementById('p-count').value;
+            const box = document.getElementById('names-box');
+            box.innerHTML = '';
+            for(let i=1; i<=n; i++) box.innerHTML += `<input type="text" placeholder="اسم اللاعب ${i}" class="p-name-in">`;
+        }
+
+        function startBattle() {
+            const ins = document.querySelectorAll('.p-name-in');
+            game.players = Array.from(ins).map(i => i.value || "لاعب");
+            game.players.forEach(p => game.scores[p] = 0);
+            showScreen('game-screen');
+            loadQ();
+        }
+
+        function loadQ() {
+            document.getElementById('player-display').innerText = game.players[game.currentIdx];
+            document.getElementById('answer-text').classList.add('hidden');
+            document.getElementById('score-btns').classList.add('hidden');
+            document.getElementById('show-btn').classList.remove('hidden');
+            
+            if(game.type === 'spy') {
+                document.getElementById('question-text').innerText = "المكان السري: " + data.spy[Math.floor(Math.random()*3)];
+                document.getElementById('answer-text').innerText = "الجاسوس لازم يخمن!";
+            } else {
+                const item = data[game.type][game.round % data[game.type].length];
+                document.getElementById('question-text').innerText = item.q;
+                document.getElementById('answer-text').innerText = "الإجابة: " + item.a;
+            }
+        }
+
+        function revealAnswer() {
+            document.getElementById('answer-text').classList.remove('hidden');
+            document.getElementById('show-btn').classList.add('hidden');
+            document.getElementById('score-btns').classList.remove('hidden');
+            document.getElementById('score-btns').style.display = 'flex';
+        }
+
+        function handleNext(win) {
+            if(win) game.scores[game.players[game.currentIdx]]++;
+            game.currentIdx++;
+            if(game.currentIdx >= game.players.length) { game.currentIdx = 0; game.round++; }
+            if(game.round < 5) loadQ(); else alert("انتهت اللعبة!");
+        }
+    </script>
 </body>
 </html>
