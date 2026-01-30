@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIPLOMATIC HUB - Pro</title>
+    <title>DIPLOMATIC HUB</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,43 +11,44 @@
         <h1 class="gold-text">DIPLOMATIC HUB</h1>
 
         <div id="setup-screen" class="screen">
-            <h3>عدد اللاعبين: <span id="player-count-display">2</span></h3>
-            <input type="range" id="player-count" min="2" max="10" value="2" oninput="updatePlayerInputs()">
+            <p>اختر عدد اللاعبين (2 - 10):</p>
+            <input type="number" id="player-count" min="2" max="10" value="2" onchange="generateNameInputs()">
             <div id="names-container">
-                <input type="text" placeholder="اسم اللاعب 1" class="player-name">
-                <input type="text" placeholder="اسم اللاعب 2" class="player-name">
+                <input type="text" placeholder="اسم اللاعب 1" class="player-name-input">
+                <input type="text" placeholder="اسم اللاعب 2" class="player-name-input">
             </div>
-            <button class="game-card" onclick="goToMenu()">دخول اللعبة</button>
+            <button class="game-card" onclick="savePlayersAndGoToMenu()">دخول اللعبة</button>
         </div>
 
         <div id="main-menu" class="screen hidden">
             <button class="game-card" onclick="startGame('kora')">⚽ تحدي الكورة</button>
             <button class="game-card" onclick="startGame('fawazir')">🌙 فوازير رمضان</button>
             <button class="game-card" onclick="startGame('spy')">🕵️ مين الجاسوس؟</button>
+            <button class="back-nav-btn" onclick="location.reload()">رجوع</button>
         </div>
 
         <div id="game-screen" class="screen hidden">
-            <div id="turn-display" style="color: var(--gold); font-weight: bold;">دور اللاعب: <span id="current-player-name"></span></div>
+            <div id="turn-info" class="gold-text" style="font-size: 1.2rem;">دور: <span id="current-player-display"></span></div>
             <div class="game-card">
-                <p id="question-text">السؤال سيظهر هنا</p>
-                <p id="answer-text" class="hidden" style="color: #00ff00; border-top: 1px solid #444; margin-top: 10px;"></p>
+                <p id="question-text">جاري التحميل...</p>
+                <p id="answer-text" class="hidden" style="color: #00ff00; margin-top: 15px; border-top: 1px solid #444; padding-top: 10px;"></p>
             </div>
-            
-            <button id="show-answer-btn" class="action-btn" onclick="showAnswer()">إظهار الإجابة</button>
-            
-            <div id="score-controls" class="hidden" style="display:flex; gap:10px;">
-                <button class="action-btn" style="background: green;" onclick="addScore(true)">صح (+1)</button>
-                <button class="action-btn" style="background: red;" onclick="addScore(false)">غلط (0)</button>
+            <button id="show-btn" class="action-btn" onclick="revealAnswer()">إظهار الإجابة</button>
+            <div id="score-btns" class="hidden" style="display: flex; gap: 10px;">
+                <button class="action-btn" style="background: #28a745;" onclick="handleScore(true)">صح (+1)</button>
+                <button class="action-btn" style="background: #dc3545;" onclick="handleScore(false)">خطأ</button>
             </div>
         </div>
 
         <div id="result-screen" class="screen hidden">
-            <h2 class="gold-text">النتيجة النهائية</h2>
-            <div id="final-scores"></div>
-            <button class="back-nav-btn" onclick="location.reload()">لعب جديد</button>
+            <h2 class="gold-text">الترتيب النهائي</h2>
+            <div id="final-table"></div>
+            <button class="game-card" onclick="location.reload()">لعب من جديد</button>
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
