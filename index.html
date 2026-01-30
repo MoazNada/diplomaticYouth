@@ -2,6 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DIPLOMATIC HUB</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -10,27 +11,29 @@
         <h1 class="gold-text">DIPLOMATIC HUB</h1>
 
         <div id="connection-menu" class="screen">
+            <button class="game-card" onclick="setMode('local')">🏠 لعب محلي</button>
             <button class="game-card" onclick="setMode('online')">🌐 ابدأ اللعب أونلاين</button>
+        </div>
+
+        <div id="main-menu" class="screen hidden">
+            <button class="game-card" onclick="startGame('kora')">⚽ تحدي الكورة</button>
+            <button class="game-card" onclick="startGame('fawazir')">🌙 فوازير رمضان</button>
+            <button class="game-card" onclick="startGame('spy')">🕵️ مين الجاسوس؟</button>
+            <button class="back-nav-btn" onclick="location.reload()">رجوع</button>
         </div>
 
         <div id="online-screen" class="screen hidden">
             <input type="text" id="room-id" placeholder="ادخل كود الغرفة">
             <button class="action-btn" onclick="joinRoom()">دخول</button>
-            <hr>
-            <label>اختر عدد الأسئلة:</label>
-            <select id="q-count" class="game-card">
-                <option value="10">10 أسئلة</option>
-                <option value="20">20 سؤال</option>
-            </select>
-            <button class="back-nav-btn" onclick="createRoom()">إنشاء غرفة جديدة</button>
+            <button class="back-nav-btn" onclick="createRoom()">إنشاء غرفة جديدة +</button>
         </div>
 
         <div id="game-screen" class="screen hidden">
-            <div id="points-board" class="points-grid"></div>
-            <div class="game-card">
-                <h2 id="question-text">استعد...</h2>
-                <div id="options-container"></div>
+            <div id="question-box" class="game-card">
+                <p id="question-text">جاري تحميل السؤال...</p>
             </div>
+            <button class="action-btn" onclick="nextQuestion()">السؤال التالي</button>
+            <button class="back-nav-btn" onclick="location.reload()">إنهاء اللعبة</button>
         </div>
     </div>
 
