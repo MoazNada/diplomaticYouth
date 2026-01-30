@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIPLOMATIC HUB - FIXED</title>
+    <title>DIPLOMATIC HUB - FULL GAMES</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,22 +14,23 @@
             <h3>اختر نوع اللعبة</h3>
             <button class="game-card" onclick="setGame('kora')">⚽ كورة</button>
             <button class="game-card" onclick="setGame('fawazir')">🌙 فوازير</button>
+            <button class="game-card" onclick="setGame('no_repeat')">🚫 بدون تكرار</button>
+            <button class="game-card" onclick="setGame('what_if')">🤔 لو كنت مكانك</button>
             <div style="margin-top:20px;">
                 <p>عدد الأسئلة:</p>
                 <select id="q-count-select" class="action-btn" style="background:#222; color:white;">
                     <option value="10">10 أسئلة</option>
-                    <option value="20">20 سؤال</option>
+                    <option value="15">15 سؤال</option>
                 </select>
             </div>
         </div>
 
         <div id="online-setup-screen" class="screen hidden">
-            <input type="text" id="user-name" placeholder="ادخل اسمك">
+            <input type="text" id="user-name" placeholder="اسمك">
             <button class="action-btn" onclick="initRoom('create')">➕ إنشاء غرفة</button>
-            <hr style="border: 0.5px solid #333; margin: 20px 0;">
             <input type="text" id="join-input" placeholder="كود الغرفة">
             <button class="game-card" onclick="initRoom('join')">🔗 انضمام</button>
-            <button class="action-btn" style="background:transparent; color:#888;" onclick="showScreen('category-screen')">🔙 رجوع</button>
+            <button class="back-nav-btn" onclick="showScreen('category-screen')">🔙 رجوع</button>
         </div>
 
         <div id="lobby-screen" class="screen hidden">
@@ -39,7 +40,7 @@
                 <div id="players-list"></div>
             </div>
             <button id="host-start-btn" class="action-btn hidden" onclick="triggerStart()">ابدأ الجيم 🚀</button>
-            <button class="action-btn" style="background:transparent; color:#888;" onclick="location.reload()">🔙 خروج</button>
+            <button class="action-btn" style="background:transparent; color:#888;" onclick="location.reload()">🏠 خروج</button>
         </div>
 
         <div id="game-screen" class="screen hidden">
@@ -52,19 +53,19 @@
                 <input type="text" id="ans-input" placeholder="اكتب إجابتك هنا">
                 <button class="action-btn" onclick="submitProcess()">إرسال ✅</button>
             </div>
-            <div id="instant-feedback" class="hidden" style="margin-top:10px; font-weight:bold; font-size:1.2rem;"></div>
+            <div id="instant-feedback" class="hidden"></div>
         </div>
 
         <div id="result-screen" class="screen hidden">
             <h3 class="gold-text">النتائج 🏆</h3>
             <div id="leaderboard" class="glass-box"></div>
-            <div class="glass-box" style="border: 1px solid #00ff88;">
+            <div class="glass-box" id="ans-box" style="border: 1px solid #00ff88;">
                 <p>الإجابة الصح كانت:</p>
                 <h2 id="correct-reveal" style="color:#00ff88;"></h2>
             </div>
             <div id="host-controls" class="hidden">
                 <button class="action-btn" onclick="triggerStart()">السؤال التالي ➡️</button>
-                <button class="game-card" onclick="location.reload()">🏠 الرئيسية</button>
+                <button class="game-card" onclick="location.reload()">🏠 العودة للرئيسية</button>
             </div>
         </div>
     </div>
@@ -86,15 +87,25 @@
         const db = firebase.database();
 
         let me = { name: '', room: '', isHost: false, gameType: '', maxQ: 10, score: 0 };
+        
         const dataBank = {
             kora: [
                 {q:"من هداف العالم التاريخي؟", a:"رونالدو"}, {q:"نادي القرن في أفريقيا؟", a:"الاهلي"},
-                {q:"بطل مونديال 2022؟", a:"الارجنتين"}, {q:"أين يلعب ميسي حالياً؟", a:"انتر ميامي"},
-                {q:"أكثر بلد فاز بكأس العالم؟", a:"البرازيل"}, {q:"ملعب نادي ريال مدريد؟", a:"بيرنابيو"}
+                {q:"بطل مونديال 2022؟", a:"الارجنتين"}, {q:"مدرب مانشستر سيتي؟", a:"غوارديولا"},
+                {q:"أكثر لاعب فاز بالكرة الذهبية؟", a:"ميسي"}, {q:"بطل يورو 2024؟", a:"اسبانيا"}
             ],
             fawazir: [
                 {q:"شيء يطير بلا أجنحة؟", a:"الدخان"}, {q:"له أسنان ولا يعض؟", a:"المشط"},
-                {q:"ابن أمك وأبوك وليس أخاك؟", a:"أنت"}, {q:"كلمة تبطل إذا نطقنا بها؟", a:"الصمت"}
+                {q:"شيء يكتب ولا يقرأ؟", a:"القلم"}, {q:"مليء بالثقوب ويحفظ الماء؟", a:"الاسفنج"}
+            ],
+            no_repeat: [
+                {q:"اذكر اسم فاكهة حمراء (ممنوع التكرار)", a:"تفاح/فراولة"},
+                {q:"اذكر ماركة سيارات (ممنوع التكرار)", a:"بي ام/مرسيدس"},
+                {q:"اذكر دولة عربية (ممنوع التكرار)", a:"مصر/السعودية"}
+            ],
+            what_if: [
+                {q:"لو كنت مكانك ولقيت شنطة فلوس؟", a:"رأي اللاعب"},
+                {q:"لو كنت مكانك وبقيت رئيس نادي؟", a:"رأي اللاعب"}
             ]
         };
 
@@ -105,7 +116,7 @@
 
         window.setGame = (g) => {
             me.gameType = g;
-            me.maxQ = document.getElementById('q-count-select').value;
+            me.maxQ = parseInt(document.getElementById('q-count-select').value);
             showScreen('online-setup-screen');
         };
 
@@ -113,14 +124,17 @@
             me.name = document.getElementById('user-name').value.trim() || "لاعب_" + Math.floor(Math.random()*99);
             me.room = type === 'create' ? Math.random().toString(36).substring(2,6).toUpperCase() : document.getElementById('join-input').value.toUpperCase();
             me.isHost = type === 'create';
-            if(me.isHost) db.ref('party/'+me.room).set({status:'lobby', qIdx:0, game:me.gameType, maxQ:me.maxQ, timer:15});
-            db.ref('party/'+me.room+'/players/'+me.name).set({score:0, submitted:false});
+
+            if(me.isHost) {
+                db.ref('party/' + me.room).set({ status: 'lobby', qIdx: 0, game: me.gameType, maxQ: me.maxQ, timer: 20 });
+            }
+            db.ref('party/' + me.room + '/players/' + me.name).set({ score: 0, submitted: false });
             listen();
             showScreen('lobby-screen');
         };
 
         function listen() {
-            db.ref('party/'+me.room).on('value', (snap) => {
+            db.ref('party/' + me.room).on('value', (snap) => {
                 const data = snap.val(); if(!data) return;
                 document.getElementById('room-display').innerText = me.room;
                 const pList = document.getElementById('players-list');
@@ -131,23 +145,25 @@
                 for(let p in data.players) {
                     count++;
                     pList.innerHTML += `<p>👤 ${p}: ${data.players[p].score}</p>`;
-                    board.innerHTML += `<p>${p}: ${data.players[p].score}ن</p>`;
+                    board.innerHTML += `<p style="display:flex; justify-content:space-between;"><span>${p}</span><span>${data.players[p].score}ن</span></p>`;
                     if(!data.players[p].submitted) allDone = false;
                 }
 
-                if(allDone && count > 0 && data.status === 'playing' && me.isHost) db.ref('party/'+me.room).update({status:'results'});
+                if(allDone && count > 0 && data.status === 'playing' && me.isHost) {
+                    db.ref('party/' + me.room).update({ status: 'results' });
+                }
 
                 if(data.status === 'playing') {
                     showScreen('game-screen');
                     document.getElementById('input-zone').classList.remove('hidden');
                     document.getElementById('instant-feedback').classList.add('hidden');
-                    document.getElementById('q-info').innerText = `سؤال ${data.qIdx+1} من ${data.maxQ}`;
-                    document.getElementById('question-text').innerText = dataBank[data.game][data.qIdx].q;
-                    document.getElementById('timer-bar').style.width = (data.timer/15*100) + "%";
+                    document.getElementById('q-info').innerText = `سؤال ${data.qIdx + 1} من ${data.maxQ}`;
+                    document.getElementById('question-text').innerText = dataBank[data.game][data.qIdx]?.q || "انتهت الأسئلة";
+                    document.getElementById('timer-bar').style.width = (data.timer / 20 * 100) + "%";
                 } else if(data.status === 'results') {
                     showScreen('result-screen');
-                    document.getElementById('correct-reveal').innerText = dataBank[data.game][data.qIdx].a;
-                    if(me.isHost) document.getElementById('host-controls').classList.remove('hidden');
+                    document.getElementById('correct-reveal').innerText = dataBank[data.game][data.qIdx]?.a || "جاري التقييم..";
+                    document.getElementById('host-controls').classList.toggle('hidden', !me.isHost);
                 }
                 if(me.isHost) document.getElementById('host-start-btn').classList.toggle('hidden', data.status !== 'lobby');
             });
@@ -155,32 +171,42 @@
 
         window.submitProcess = () => {
             const val = document.getElementById('ans-input').value.trim();
-            db.ref('party/'+me.room).once('value', s => {
-                const correct = dataBank[s.val().game][s.val().qIdx].a;
+            db.ref('party/' + me.room).once('value', s => {
+                const currentData = s.val();
+                const correct = dataBank[currentData.game][currentData.qIdx].a;
                 const feedback = document.getElementById('instant-feedback');
                 feedback.classList.remove('hidden');
-                if(val.toLowerCase() === correct.toLowerCase()) {
-                    feedback.innerHTML = "✅ صح!"; feedback.style.color = "#00ff88";
-                    me.score += 10;
-                    db.ref('party/'+me.room+'/players/'+me.name).update({score: me.score});
+
+                if(currentData.game === 'kora' || currentData.game === 'fawazir') {
+                    if(val.toLowerCase() === correct.toLowerCase()) {
+                        feedback.innerHTML = "✅ صح!"; feedback.style.color = "#00ff88";
+                        me.score += 10;
+                    } else {
+                        feedback.innerHTML = `❌ خطأ! الصح: ${correct}`; feedback.style.color = "#ff4444";
+                    }
                 } else {
-                    feedback.innerHTML = `❌ خطأ! الصح: ${correct}`; feedback.style.color = "#ff4444";
+                    feedback.innerHTML = "✅ تم استلام إجابتك!"; feedback.style.color = "white";
+                    me.score += 5; // ألعاب الرأي والتكرار تأخذ نقاط تلقائية للمشاركة
                 }
-                db.ref('party/'+me.room+'/players/'+me.name).update({submitted:true});
+
+                db.ref('party/' + me.room + '/players/' + me.name).update({ score: me.score, submitted: true });
                 document.getElementById('input-zone').classList.add('hidden');
                 document.getElementById('ans-input').value = "";
             });
         };
 
         window.triggerStart = () => {
-            db.ref('party/'+me.room).once('value', s => {
+            db.ref('party/' + me.room).once('value', s => {
                 let idx = s.val().status === 'results' ? s.val().qIdx + 1 : 0;
-                for(let p in s.val().players) db.ref('party/'+me.room+'/players/'+p).update({submitted:false});
-                db.ref('party/'+me.room).update({status:'playing', qIdx:idx, timer:15});
-                let t = 15;
+                if(idx >= s.val().maxQ || !dataBank[s.val().game][idx]) { alert("الجيم خلص!"); location.reload(); return; }
+                
+                for(let p in s.val().players) db.ref('party/'+me.room+'/players/'+p).update({submitted: false});
+                db.ref('party/' + me.room).update({ status: 'playing', qIdx: idx, timer: 20 });
+                
+                let t = 20;
                 let i = setInterval(() => {
-                    t--; db.ref('party/'+me.room).update({timer:t});
-                    if(t <= 0) { clearInterval(i); db.ref('party/'+me.room).update({status:'results'}); }
+                    t--; db.ref('party/' + me.room).update({ timer: t });
+                    if(t <= 0) { clearInterval(i); db.ref('party/' + me.room).update({ status: 'results' }); }
                 }, 1000);
             });
         };
