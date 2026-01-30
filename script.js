@@ -1,83 +1,106 @@
-// بيانات الـ Firebase الخاصة بك
+// إعدادات Firebase الخاصة بمشروعك
 const firebaseConfig = {
-  apiKey: "AIzaSyAESCjnKsQxNX_IKH9Fm_ePpIsbb9C_NsE",
-  authDomain: "diplomatic-games.firebaseapp.com",
-  projectId: "diplomatic-games",
-  storageBucket: "diplomatic-games.firebasestorage.app",
-  messagingSenderId: "726415224604",
-  appId: "1:726415224604:web:3f436ef230254a5ee914d9",
-  databaseURL: "https://diplomatic-games-default-rtdb.firebaseio.com"
+    apiKey: "AIzaSyAESCjnKsQxNX_IKH9Fm_ePpIsbb9C_NsE",
+    authDomain: "diplomatic-games.firebaseapp.com",
+    projectId: "diplomatic-games",
+    storageBucket: "diplomatic-games.firebasestorage.app",
+    messagingSenderId: "726415224604",
+    appId: "1:726415224604:web:3f436ef230254a5ee914d9",
+    databaseURL: "https://diplomatic-games-default-rtdb.firebaseio.com"
 };
+
+// تشغيل Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let gameData = { type: '', players: [], scores: {}, round: 0, pIdx: 0 };
+// متغيرات اللعبة
+let game = { type: '', players: [], scores: {}, currentIdx: 0, round: 0 };
 
-// الأسئلة
-const questions = {
-    kora: [{q: "من هداف العالم؟", a: "كريستيانو رونالدو"}, {q: "نادي القرن الأفريقي؟", a: "الأهلي"}],
-    fawazir: [{q: "يكتب ولا يقرأ؟", a: "القلم"}, {q: "ينبض بلا قلب؟", a: "الساعة"}],
-    spy: ["مطار", "مستشفى", "ملعب", "مطعم"]
+const data = {
+    kora: [{q:"من هو هداف العالم التاريخي؟", a:"كريستيانو رونالدو"}, {q:"من فاز بكأس العالم 2022؟", a:"الأرجنتين"}, {q:"نادي القرن في أفريقيا؟", a:"الأهلي"}],
+    fawazir: [{q:"شيء يكتب ولا يقرأ؟", a:"القلم"}, {q:"ينبض بلا قلب؟", a:"الساعة"}],
+    spy: ["مطار", "مستشفى", "ملعب", "مطعم", "حديقة"]
 };
 
-// وظائف الأزرار (تأكد من مطابقة الأسماء مع HTML)
-window.openLobby = function() { hideScreens(); document.getElementById('online-lobby').classList.remove('hidden'); }
-window.openCategories = function() { hideScreens(); document.getElementById('category-screen').classList.remove('hidden'); }
-window.goToSetup = function(t) { gameData.type = t; hideScreens(); document.getElementById('setup-screen').classList.remove('hidden'); }
+// وظائف التنقل (الأونلاين والمحلي)
+window.showScreen = function(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+}
 
 window.createNewRoom = function() {
     const rId = Math.random().toString(36).substring(2, 6).toUpperCase();
-    db.ref('rooms/' + rId).set({ status: 'waiting' }).then(() => {
-        alert("كود غرفتك هو: " + rId);
-        window.openCategories();
+    db.ref('rooms/' + rId).set({ status: 'waiting', createdAt: Date.now() })
+    .then(() => {
+        alert("تم إنشاء الغرفة! كود غرفتك هو: " + rId);
+        window.showScreen('category-screen');
+    }).catch(err => alert("مشكلة في الاتصال: " + err));
+}
+
+window.joinRoom = function() {
+    const rId = document.getElementById('room-input').value.toUpperCase();
+    db.ref('rooms/' + rId).once('value', (snapshot) => {
+        if (snapshot.exists()) {
+            alert("تم الدخول للغرفة!");
+            window.showScreen('category-screen');
+        } else {
+            alert("الكود ده غلط يا بطل!");
+        }
     });
 }
 
-window.makeInputs = function() {
-    const n = document.getElementById('player-count').value;
-    const box = document.getElementById('names-container');
+window.setGame = function(t) { 
+    game.type = t; 
+    window.showScreen('setup-screen'); 
+}
+
+window.genInputs = function() {
+    const n = document.getElementById('p-count').value;
+    const box = document.getElementById('names-box');
     box.innerHTML = '';
-    for(let i=1; i<=n; i++) box.innerHTML += `<input type="text" placeholder="اسم اللاعب ${i}" class="p-name">`;
-}
-
-window.startNow = function() {
-    const inputs = document.querySelectorAll('.p-name');
-    gameData.players = Array.from(inputs).map((inp, i) => inp.value || `لاعب ${i+1}`);
-    gameData.players.forEach(p => gameData.scores[p] = 0);
-    hideScreens();
-    document.getElementById('game-screen').classList.remove('hidden');
-    loadQuestion();
-}
-
-function loadQuestion() {
-    document.getElementById('current-p').innerText = gameData.players[gameData.pIdx];
-    document.getElementById('a-text').classList.add('hidden');
-    document.getElementById('score-controls').classList.add('hidden');
-    document.getElementById('show-ans-btn').classList.remove('hidden');
-    
-    if(gameData.type === 'spy') {
-        document.getElementById('q-text').innerText = "المكان السري: " + questions.spy[Math.floor(Math.random()*questions.spy.length)];
-        document.getElementById('a-text').innerText = "الجاسوس لازم يخمن المكان!";
-    } else {
-        const item = questions[gameData.type][gameData.round % questions[gameData.type].length];
-        document.getElementById('q-text').innerText = item.q;
-        document.getElementById('a-text').innerText = "الإجابة: " + item.a;
+    for(let i=1; i<=n; i++) {
+        box.innerHTML += `<input type="text" placeholder="اسم اللاعب ${i}" class="p-name-in">`;
     }
 }
 
-window.showAns = function() {
-    document.getElementById('a-text').classList.remove('hidden');
-    document.getElementById('show-ans-btn').classList.add('hidden');
-    document.getElementById('score-controls').classList.remove('hidden');
+window.startBattle = function() {
+    const ins = document.querySelectorAll('.p-name-in');
+    game.players = Array.from(ins).map(i => i.value || "لاعب مجهول");
+    game.players.forEach(p => game.scores[p] = 0);
+    window.showScreen('game-screen');
+    loadQ();
 }
 
-window.nextP = function(win) {
-    if(win) gameData.scores[gameData.players[gameData.pIdx]]++;
-    gameData.pIdx++;
-    if(gameData.pIdx >= gameData.players.length) { gameData.pIdx = 0; gameData.round++; }
-    if(gameData.round < 5) loadQuestion(); else alert("خلصنا التحدي!");
+function loadQ() {
+    document.getElementById('player-display').innerText = game.players[game.currentIdx];
+    document.getElementById('answer-text').classList.add('hidden');
+    document.getElementById('score-btns').classList.add('hidden');
+    document.getElementById('show-btn').classList.remove('hidden');
+    
+    if(game.type === 'spy') {
+        const randomPlace = data.spy[Math.floor(Math.random() * data.spy.length)];
+        document.getElementById('question-text').innerText = "المكان السري (محدش يشوف): " + randomPlace;
+        document.getElementById('answer-text').innerText = "الجاسوس لازم يخمن المكان!";
+    } else {
+        const item = data[game.type][game.round % data[game.type].length];
+        document.getElementById('question-text').innerText = item.q;
+        document.getElementById('answer-text').innerText = "الإجابة: " + item.a;
+    }
 }
 
-function hideScreens() {
-    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+window.revealAnswer = function() {
+    document.getElementById('answer-text').classList.remove('hidden');
+    document.getElementById('show-btn').classList.add('hidden');
+    document.getElementById('score-btns').classList.remove('hidden');
+    document.getElementById('score-btns').style.display = 'flex';
+}
+
+window.handleNext = function(win) {
+    if(win) game.scores[game.players[game.currentIdx]]++;
+    game.currentIdx++;
+    if(game.currentIdx >= game.players.length) { 
+        game.currentIdx = 0; 
+        game.round++; 
+    }
+    if(game.round < 5) loadQ(); else alert("انتهى التحدي! مبروك للأبطال.");
 }
