@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIPLOMATIC HUB - ELITE</title>
+    <title>DIPLOMATIC HUB - ULTRA</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,46 +11,46 @@
         <h1 class="gold-text">DIPLOMATIC HUB</h1>
 
         <div id="category-screen" class="screen">
-            <h3>اختر التحدي (10 أسئلة)</h3>
-            <button class="game-card" onclick="selectGame('kora')">⚽ تحدي الكورة</button>
-            <button class="game-card" onclick="selectGame('fawazir')">🌙 فوازير رمضان</button>
-            <button class="game-card" onclick="selectGame('no_repeat')">🚫 بدون تكرار</button>
-            <button class="game-card" onclick="selectGame('what_if')">🤔 لو كنت مكانك</button>
-        </div>
-
-        <div id="login-screen" class="screen hidden">
-            <input type="text" id="user-name" placeholder="اسمك المستعار">
-            <button class="action-btn" onclick="initParty('create')">➕ إنشاء غرفة</button>
-            <input type="text" id="join-input" placeholder="كود الغرفة">
-            <button class="game-card" onclick="initParty('join')">🔗 انضمام</button>
+            <h3>اختر نوع اللعبة</h3>
+            <button class="game-card" onclick="selectGame('kora')">⚽ كورة</button>
+            <button class="game-card" onclick="selectGame('fawazir')">🌙 فوازير</button>
+            <div style="margin-top:20px;">
+                <p>عدد الأسئلة:</p>
+                <select id="q-count-select" class="action-btn" style="background:#222; color:white;">
+                    <option value="10">10 أسئلة</option>
+                    <option value="20">20 سؤال</option>
+                </select>
+            </div>
         </div>
 
         <div id="lobby-screen" class="screen hidden">
             <h2 id="room-code" class="gold-text"></h2>
             <div id="players-list" class="glass-box"></div>
-            <button id="host-start-btn" class="action-btn hidden" onclick="startRound()">ابدأ التحدي 🚀</button>
+            <button id="host-start-btn" class="action-btn hidden" onclick="startNewRound(true)">ابدأ الجيم 🚀</button>
         </div>
 
         <div id="game-screen" class="screen hidden">
             <div class="timer-wrapper"><div id="timer-bar"></div></div>
-            <p id="q-counter" style="color:var(--gold);"></p>
+            <p id="q-status" style="color:var(--gold);"></p>
             <div class="glass-box">
-                <h3 id="question-text">جاري التحميل...</h3>
+                <h3 id="question-text">...</h3>
             </div>
-            <input type="text" id="ans-input" placeholder="اكتب إجابتك هنا...">
-            <button class="action-btn" id="send-btn" onclick="submitAnswer()">إرسال الإجابة ✅</button>
-            <p id="wait-msg" class="hidden">تم استلام إجابتك.. انتظر الباقي</p>
+            <div id="input-zone">
+                <input type="text" id="ans-input" placeholder="اكتب إجابتك هنا...">
+                <button class="action-btn" onclick="submitAndCheck()">إرسال ✅</button>
+            </div>
+            <div id="feedback" class="hidden" style="font-size: 1.5rem; margin-top:10px;"></div>
         </div>
 
-        <div id="judge-screen" class="screen hidden">
-            <h3 class="gold-text">النتائج والتحكيم ⚖️</h3>
-            <div id="judging-list" class="glass-box"></div>
-            <div class="glass-box" style="border-color: #00ff88;">
-                <p>الإجابة النموذجية:</p>
-                <h2 id="model-answer" style="color:#00ff88;"></h2>
+        <div id="result-screen" class="screen hidden">
+            <h3 class="gold-text">النتائج 🏆</h3>
+            <div id="leaderboard" class="glass-box"></div>
+            <div class="glass-box" style="border:1px solid #00ff88">
+                <p>الإجابة كانت:</p>
+                <h2 id="correct-reveal" style="color:#00ff88"></h2>
             </div>
             <div id="host-nav" class="hidden">
-                <button id="next-btn" class="action-btn" onclick="startRound()">السؤال التالي ➡️</button>
+                <button id="next-q-btn" class="action-btn" onclick="startNewRound(false)">السؤال التالي ➡️</button>
                 <button class="game-card" onclick="location.reload()">العودة للرئيسية 🏠</button>
             </div>
         </div>
@@ -72,24 +72,10 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let me = { name: '', room: '', isHost: false, game: '', score: 0 };
-        
-        // بنك الأسئلة (10 أسئلة لكل لعبة)
+        let me = { name: '', room: '', isHost: false, game: '', score: 0, maxQ: 10 };
         const questions = {
-            kora: [
-                {q: "من هداف العالم التاريخي؟", a: "رونالدو"}, {q: "نادي القرن في أفريقيا؟", a: "الاهلي"},
-                {q: "من فاز بكأس العالم 2022؟", a: "الارجنتين"}, {q: "أين يلعب هالاند حالياً؟", a: "مانشستر سيتي"},
-                {q: "أكثر لاعب فاز بالكرة الذهبية؟", a: "ميسي"}, {q: "بطل دوري أبطال أوروبا 2024؟", a: "ريال مدريد"},
-                {q: "لقب منتخب مصر؟", a: "الفراعنة"}, {q: "في أي دولة يقع ملعب ماراكانا؟", a: "البرازيل"},
-                {q: "كم عدد لاعبي فريق كرة القدم؟", a: "11"}, {q: "مدرب مانشستر سيتي الحالي؟", a: "غوارديولا"}
-            ],
-            fawazir: [
-                {q: "شيء يطير بلا أجنحة؟", a: "الدخان"}, {q: "يسمع بلا أذن ويتكلم بلا لسان؟", a: "التليفون"},
-                {q: "له أسنان ولا يعض؟", a: "المشط"}, {q: "بيت ليس له أبواب ولا نوافذ؟", a: "القصيدة"},
-                {q: "يمشي بلا أرجل ويدخل الأذنين؟", a: "الصوت"}, {q: "كلما أخذت منه كبر؟", a: "الحفرة"},
-                {q: "له رأس ولا عين له؟", a: "الدبوس"}, {q: "مليء بالثقوب ويحفظ الماء؟", a: "الاسفنج"},
-                {q: "كم شهر في السنة فيه 28 يوم؟", a: "كل الشهور"}, {q: "ابن أمك وأبوك وليس بأخيك؟", a: "أنت"}
-            ]
+            kora: [{q:"من هداف العالم؟", a:"رونالدو"}, {q:"نادي القرن؟", a:"الاهلي"}, {q:"بطل مونديال 2022؟", a:"الارجنتين"}], // زود لحد 20 هنا
+            fawazir: [{q:"شيء يكتب ولا يقرأ؟", a:"القلم"}, {q:"له أسنان ولا يعض؟", a:"المشط"}] // زود لحد 20 هنا
         };
 
         function showScreen(id) {
@@ -97,84 +83,98 @@
             document.getElementById(id).classList.remove('hidden');
         }
 
-        window.selectGame = (g) => { me.game = g; showScreen('login-screen'); };
-
-        window.initParty = (type) => {
-            me.name = document.getElementById('user-name').value || "لاعب";
-            me.room = type === 'create' ? Math.random().toString(36).substring(2,6).toUpperCase() : document.getElementById('join-input').value.toUpperCase();
-            me.isHost = type === 'create';
-            if(me.isHost) db.ref('games/'+me.room).set({status:'lobby', qIdx: 0, gameType: me.game, timer: 20});
-            db.ref('games/'+me.room+'/players/'+me.name).set({score: 0, ans: '', submitted: false});
-            listen();
-            showScreen('lobby-screen');
+        window.selectGame = (g) => {
+            me.game = g;
+            me.maxQ = document.getElementById('q-count-select').value;
+            me.name = prompt("اكتب اسمك") || "لاعب";
+            me.room = Math.random().toString(36).substring(2,6).toUpperCase();
+            me.isHost = true;
+            
+            db.ref('hub/'+me.room).set({status:'lobby', qIdx: 0, game: g, maxQ: me.maxQ, timer: 15});
+            joinRoom(me.room);
         };
 
-        function listen() {
-            db.ref('games/'+me.room).on('value', (snap) => {
+        // دالة الانضمام (للكل)
+        function joinRoom(id) {
+            me.room = id;
+            db.ref('hub/'+id+'/players/'+me.name).set({score:0, submitted: false});
+            listenUpdates();
+            showScreen('lobby-screen');
+        }
+
+        function listenUpdates() {
+            db.ref('hub/'+me.room).on('value', snap => {
                 const data = snap.val(); if(!data) return;
                 document.getElementById('room-code').innerText = "كود: " + me.room;
                 
+                // تحديث اللاعبين
                 const pList = document.getElementById('players-list');
-                pList.innerHTML = "";
-                for(let p in data.players) pList.innerHTML += `<p>👤 ${p}: ${data.players[p].score} نقطة</p>`;
+                const board = document.getElementById('leaderboard');
+                pList.innerHTML = ""; board.innerHTML = "";
+                let allDone = true;
+                
+                for(let p in data.players) {
+                    pList.innerHTML += `<p>👤 ${p}: ${data.players[p].score}</p>`;
+                    board.innerHTML += `<p>${p}: ${data.players[p].score} نقطة</p>`;
+                    if(!data.players[p].submitted) allDone = false;
+                }
+
+                // الانتقال الفوري للنتائج لو الكل جاوب [Quick-Skip]
+                if(allDone && data.status === 'playing' && me.isHost) {
+                    db.ref('hub/'+me.room).update({status: 'results'});
+                }
 
                 if(data.status === 'playing') {
                     showScreen('game-screen');
-                    document.getElementById('ans-input').classList.remove('hidden');
-                    document.getElementById('send-btn').classList.remove('hidden');
-                    document.getElementById('wait-msg').classList.add('hidden');
-                    document.getElementById('q-counter').innerText = `سؤال ${data.qIdx + 1} من 10`;
-                    document.getElementById('question-text').innerText = questions[data.gameType][data.qIdx].q;
-                    document.getElementById('timer-bar').style.width = (data.timer / 20 * 100) + "%";
-                } else if(data.status === 'judging') {
-                    showScreen('judge-screen');
-                    renderResults(data);
+                    document.getElementById('question-text').innerText = questions[data.game][data.qIdx].q;
+                    document.getElementById('q-status').innerText = `سؤال ${data.qIdx+1} من ${data.maxQ}`;
+                    document.getElementById('timer-bar').style.width = (data.timer/15*100) + "%";
+                } else if(data.status === 'results') {
+                    showScreen('result-screen');
+                    document.getElementById('correct-reveal').innerText = questions[data.game][data.qIdx].a;
+                    if(me.isHost) document.getElementById('host-nav').classList.remove('hidden');
                 }
+                
                 if(me.isHost) document.getElementById('host-start-btn').classList.toggle('hidden', data.status !== 'lobby');
             });
         }
 
-        window.submitAnswer = () => {
-            const ans = document.getElementById('ans-input').value.trim();
-            db.ref('games/'+me.room+'/players/'+me.name).update({ans: ans, submitted: true});
-            document.getElementById('ans-input').classList.add('hidden');
-            document.getElementById('send-btn').classList.add('hidden');
-            document.getElementById('wait-msg').classList.remove('hidden');
-            document.getElementById('ans-input').value = "";
+        window.submitAndCheck = () => {
+            const userAns = document.getElementById('ans-input').value.trim();
+            const correctAns = questions[me.game][0].a; // سيتم تحديث الـ index ديناميكياً
+            const feedback = document.getElementById('feedback');
+            
+            feedback.classList.remove('hidden');
+            if(userAns.toLowerCase() === correctAns.toLowerCase()) {
+                feedback.innerHTML = "✅ إجابة صحيحة!";
+                feedback.style.color = "#00ff88";
+                me.score += 10;
+                db.ref('hub/'+me.room+'/players/'+me.name).update({score: me.score});
+            } else {
+                feedback.innerHTML = `❌ خطأ! الإجابة: ${correctAns}`;
+                feedback.style.color = "#ff4444";
+            }
+            
+            db.ref('hub/'+me.room+'/players/'+me.name).update({submitted: true});
+            document.getElementById('input-zone').classList.add('hidden');
         };
 
-        window.startRound = () => {
-            db.ref('games/'+me.room).once('value', snap => {
-                const qIdx = snap.val().status === 'judging' ? snap.val().qIdx + 1 : 0;
-                if(qIdx >= 10) { alert("انتهى التحدي! تفقد النتائج النهائية."); return; }
-                db.ref('games/'+me.room).update({status: 'playing', timer: 20, qIdx: qIdx});
-                let t = 20;
+        window.startNewRound = (first) => {
+            db.ref('hub/'+me.room).once('value', s => {
+                let nextIdx = first ? 0 : s.val().qIdx + 1;
+                // ريست للاعبين
+                for(let p in s.val().players) db.ref('hub/'+me.room+'/players/'+p).update({submitted: false});
+                
+                db.ref('hub/'+me.room).update({status: 'playing', qIdx: nextIdx, timer: 15});
+                
+                // التوقيت
+                let t = 15;
                 let i = setInterval(() => {
-                    t--; db.ref('games/'+me.room).update({timer: t});
-                    if(t <= 0) { clearInterval(i); db.ref('games/'+me.room).update({status: 'judging'}); }
+                    t--; db.ref('hub/'+me.room).update({timer: t});
+                    if(t <= 0) { clearInterval(i); db.ref('hub/'+me.room).update({status: 'results'}); }
                 }, 1000);
             });
         };
-
-        function renderResults(data) {
-            const list = document.getElementById('judging-list');
-            list.innerHTML = "<h4>إجابات الأبطال:</h4>";
-            const correctAns = questions[data.gameType][data.qIdx].a;
-            document.getElementById('model-answer').innerText = correctAns;
-
-            for(let p in data.players) {
-                const pAns = data.players[p].ans || "لم يجاوب";
-                const isCorrect = pAns.toLowerCase() === correctAns.toLowerCase();
-                list.innerHTML += `
-                    <div style="margin:10px 0; border-bottom:1px solid #333; padding:5px;">
-                        <span style="${isCorrect ? 'color:#00ff88;' : ''}"><strong>${p}:</strong> ${pAns}</span>
-                        ${me.isHost ? `<button onclick="addScore('${p}')" style="float:left; background:#28a745; color:white; border:none; padding:2px 8px; border-radius:5px;">صح ✅</button>` : ''}
-                    </div>`;
-            }
-            document.getElementById('host-nav').classList.toggle('hidden', !me.isHost);
-        }
-
-        window.addScore = (p) => db.ref('games/'+me.room+'/players/'+p+'/score').transaction(s => (s||0)+10);
     </script>
 </body>
 </html>
