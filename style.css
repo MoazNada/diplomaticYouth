@@ -1,29 +1,144 @@
-:root { --gold: #ffd700; --dark: #050505; --glass: rgba(255, 255, 255, 0.05); }
+/* الألوان الأساسية */
+:root {
+    --gold: #ffd700;
+    --dark: #050505;
+    --glass: rgba(255, 255, 255, 0.05);
+    --gold-shadow: rgba(255, 215, 0, 0.3);
+}
 
+/* تنسيق الجسم العام */
 body {
     background: radial-gradient(circle, #1a1a1a 0%, var(--dark) 100%);
-    color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0;
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    overflow-x: hidden;
 }
 
-.container { width: 90%; max-width: 450px; text-align: center; }
-.gold-text { color: var(--gold); text-shadow: 0 0 15px rgba(255, 215, 0, 0.5); font-size: 2.2rem; margin-bottom: 20px; }
+/* الحاوية الرئيسية */
+.container {
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    padding: 20px;
+}
 
-.screen { animation: slideIn 0.4s ease-out; }
-@keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+/* النصوص الذهبية */
+.gold-text {
+    color: var(--gold);
+    text-shadow: 0 0 15px var(--gold-shadow);
+    font-size: 2.2rem;
+    margin-bottom: 30px;
+    font-weight: bold;
+}
 
+/* الشاشات - السر في display: none !important */
+.screen {
+    animation: fadeIn 0.4s ease-out;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* الكروت والأزرار الكبيرة */
 .game-card {
-    background: var(--glass); border: 1px solid var(--gold); border-radius: 15px;
-    padding: 20px; margin: 15px 0; cursor: pointer; color: white; width: 100%;
-    transition: 0.3s; font-size: 1.2rem; backdrop-filter: blur(10px);
+    background: var(--glass);
+    border: 1px solid var(--gold);
+    border-radius: 15px;
+    padding: 20px;
+    margin: 15px 0;
+    cursor: pointer;
+    color: white;
+    width: 100%;
+    transition: 0.3s;
+    font-size: 1.2rem;
+    backdrop-filter: blur(10px);
+    display: block;
+    outline: none;
 }
-.game-card:hover { transform: scale(1.03); background: rgba(255, 215, 0, 0.1); }
 
-.action-btn { background: var(--gold); color: black; border: none; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; }
-.glass-box { background: rgba(255,255,255,0.03); padding: 30px; border-radius: 20px; margin: 20px 0; border: 1px dashed var(--gold); }
-.hidden { display: none !important; }
-.hidden-ans { color: #00ff88; font-weight: bold; padding-top: 15px; border-top: 1px solid #333; margin-top: 10px; }
-.flex-gap { display: flex; gap: 10px; }
-.btn-success { background: #28a745; color: white; border: none; flex: 1; padding: 15px; border-radius: 10px; cursor: pointer; }
-.btn-danger { background: #dc3545; color: white; border: none; flex: 1; padding: 15px; border-radius: 10px; cursor: pointer; }
-input { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 8px; margin-top: 10px; }
+.game-card:hover {
+    transform: translateY(-3px);
+    background: rgba(255, 215, 0, 0.1);
+    box-shadow: 0 5px 15px var(--gold-shadow);
+}
+
+/* الأزرار المهمة (إنشاء غرفة - ابدأ) */
+.action-btn {
+    background: var(--gold);
+    color: black;
+    border: none;
+    padding: 15px;
+    border-radius: 12px;
+    font-weight: bold;
+    width: 100%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    margin-top: 10px;
+    transition: 0.2s;
+}
+
+.action-btn:active {
+    transform: scale(0.95);
+}
+
+/* الصناديق الزجاجية (للأسئلة) */
+.glass-box {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 30px;
+    border-radius: 20px;
+    margin: 20px 0;
+    border: 1px dashed var(--gold);
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* المدخلات (Inputs) */
+input {
+    width: 100%;
+    padding: 12px;
+    background: #111;
+    border: 1px solid #444;
+    color: white;
+    border-radius: 10px;
+    margin-top: 10px;
+    text-align: center;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+input:focus {
+    border-color: var(--gold);
+    outline: none;
+}
+
+/* زر الرجوع */
+.back-nav-btn {
+    background: transparent;
+    border: none;
+    color: var(--gold);
+    cursor: pointer;
+    margin-top: 20px;
+    text-decoration: underline;
+    font-size: 0.9rem;
+}
+
+/* حركات الظهور */
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* تنسيق أزرار التقييم (صح/خطأ) */
+#score-btns {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
