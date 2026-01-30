@@ -1,92 +1,143 @@
-/* الألوان والأساسيات */
+/* الألوان الأساسية الهادئة والفخمة */
 :root {
     --gold: #ffd700;
-    --dark: #050505;
+    --dark: #0a0a0a;
     --glass: rgba(255, 255, 255, 0.05);
 }
 
 body {
     background: var(--dark);
     color: white;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     text-align: center;
+    direction: rtl; /* لضبط اللغة العربية */
     margin: 0;
-    padding: 20px;
-    direction: rtl; /* عشان الكلام العربي يتظبط */
+    padding: 15px;
 }
 
 .container {
-    max-width: 400px;
+    max-width: 450px;
     margin: auto;
 }
 
-/* النص الذهبي المنور */
 .gold-text {
     color: var(--gold);
-    text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
     font-size: 2.2rem;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
 }
 
-/* الشاشات والإخفاء */
+/* الشاشات وحركات الظهور */
 .screen {
-    animation: fadeIn 0.4s ease-in;
+    animation: fadeIn 0.3s ease-out;
 }
 
 .hidden {
-    display: none !important; /* دي أهم حتة عشان الزراير ما تظهرش فوق بعض */
+    display: none !important;
 }
 
-/* تصميم الكروت (الزراير الكبيرة) */
-.game-card {
-    background: var(--glass);
-    border: 1px solid var(--gold);
-    border-radius: 12px;
-    padding: 18px;
-    margin: 15px 0;
-    color: white;
-    font-size: 1.1rem;
-    cursor: pointer;
+/* شريط الوقت الذهبي (Timer) */
+.timer-wrapper {
     width: 100%;
-    transition: 0.3s;
+    background: #222;
+    height: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    border: 1px solid #333;
+}
+
+#timer-bar {
+    width: 100%;
+    height: 100%;
+    background: var(--gold);
+    box-shadow: 0 0 10px var(--gold);
+    transition: width 1s linear;
+}
+
+/* صندوق مراقبة اللاعبين (Live Feed) */
+.live-feed-box {
+    background: var(--glass);
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 25px;
+    text-align: right;
+    min-height: 100px;
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #222;
+}
+
+#feed-stream p {
+    margin: 8px 0;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #1a1a1a;
+    padding-bottom: 5px;
+}
+
+#feed-stream p strong {
+    color: var(--gold);
+}
+
+/* الكروت والأزرار */
+.glass-box {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid #333;
+    padding: 25px;
+    border-radius: 15px;
+    margin-bottom: 15px;
+}
+
+.game-card, .action-btn {
+    width: 100%;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.1rem;
+    border: none;
+    transition: 0.2s;
+}
+
+.game-card {
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: white;
 }
 
 .game-card:active {
-    background: rgba(255, 215, 0, 0.2);
-    transform: scale(0.98);
+    background: rgba(255, 215, 0, 0.1);
 }
 
-/* الزرار الأصفر (إنشاء/إظهار الإجابة) */
 .action-btn {
     background: var(--gold);
     color: black;
-    border: none;
-    padding: 15px;
-    border-radius: 10px;
-    font-weight: bold;
+}
+
+.action-btn:active {
+    transform: scale(0.96);
+}
+
+/* المدخلات (Inputs) */
+input {
     width: 100%;
-    cursor: pointer;
-    font-size: 1.1rem;
+    padding: 14px;
+    background: #151515;
+    border: 1px solid #333;
+    color: white;
+    border-radius: 10px;
+    text-align: center;
+    box-sizing: border-box;
+    font-size: 1rem;
+    margin-bottom: 10px;
 }
 
-/* صندوق السؤال */
-.glass-box {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px dashed var(--gold);
-    border-radius: 20px;
-    padding: 30px;
-    margin: 20px 0;
-    min-height: 120px;
+input:focus {
+    border-color: var(--gold);
+    outline: none;
 }
 
-/* رسالة الانتظار اللي ظهرتلك في الصورة */
-#waiting-msg {
-    color: #888;
-    font-style: italic;
-    margin-top: 10px;
-}
-
-/* حركة ظهور الشاشات */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
