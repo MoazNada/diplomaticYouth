@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIPLOMATIC HUB - MEGA PARTY</title>
+    <title>DIPLOMATIC HUB - JUDGE MODE</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,57 +11,53 @@
         <h1 class="gold-text">DIPLOMATIC HUB</h1>
 
         <div id="main-screen" class="screen">
-            <button class="game-card" onclick="setMode('online')">🌐 لعب أونلاين (Party)</button>
-            <button class="game-card" onclick="setMode('local')">🏠 لعب محلي (Offline)</button>
+            <button class="game-card" onclick="showScreen('category-screen')">🌐 ابدأ اللعب</button>
+            <button class="game-card" onclick="location.reload()">🔄 إعادة تحميل</button>
         </div>
 
         <div id="category-screen" class="screen hidden">
-            <h3 id="mode-title">اختر اللعبة</h3>
-            <button class="game-card" onclick="selectGame('kora')">⚽ تحدي الكورة</button>
-            <button class="game-card" onclick="selectGame('fawazir')">🌙 فوازير رمضان</button>
-            <button class="game-card" onclick="selectGame('spy')">🕵️ مين الجاسوس؟</button>
+            <h3>اختر نوع التحدي</h3>
+            <button class="game-card" onclick="selectGame('kora')">⚽ كورة (سرعة)</button>
+            <button class="game-card" onclick="selectGame('fawazir')">🌙 فوازير (ذكاء)</button>
+            <button class="game-card" onclick="selectGame('no_repeat')">🚫 بدون تكرار (تحدي)</button>
+            <button class="game-card" onclick="selectGame('what_if')">🤔 لو كنت مكانك</button>
             <button class="back-nav-btn" onclick="showScreen('main-screen')">رجوع</button>
         </div>
 
         <div id="login-screen" class="screen hidden">
-            <input type="text" id="user-name" placeholder="اسمك المستعار">
-            <button class="action-btn" onclick="initOnline('create')">➕ إنشاء غرفة</button>
+            <input type="text" id="user-name" placeholder="اسمك">
+            <button class="action-btn" onclick="initParty('create')">إنشاء غرفة</button>
             <input type="text" id="join-input" placeholder="كود الغرفة">
-            <button class="game-card" onclick="initOnline('join')">🔗 انضمام</button>
+            <button class="game-card" onclick="initParty('join')">انضمام</button>
         </div>
 
         <div id="lobby-screen" class="screen hidden">
-            <h2 id="room-id-view" class="gold-text"></h2>
-            <div class="glass-box">
-                <p>اللاعبين:</p>
-                <div id="players-list"></div>
-            </div>
-            <button id="host-start-btn" class="action-btn hidden" onclick="startParty()">ابدأ التحدي! 🚀</button>
+            <h2 id="room-display" class="gold-text"></h2>
+            <div id="players-list" class="glass-box"></div>
+            <button id="start-btn" class="action-btn hidden" onclick="launch()">ابدأ الجيم 🚀</button>
         </div>
 
         <div id="game-screen" class="screen hidden">
             <div class="timer-wrapper"><div id="timer-bar"></div></div>
             <div class="glass-box">
-                <h3 id="question-display">...</h3>
-                <h2 id="spy-word" class="gold-text hidden"></h2>
+                <h3 id="q-view"></h3>
+                <p id="game-hint" style="font-size:0.8rem; color:var(--gold);"></p>
             </div>
-            <div id="action-area">
-                <input type="text" id="answer-input" placeholder="اكتب إجابتك..." oninput="sendLiveGuess()">
-                <div class="live-feed-box">
-                    <div id="feed-stream"></div>
-                </div>
-            </div>
+            <input type="text" id="ans-input" placeholder="اكتب إجابتك هنا...">
+            <button class="action-btn" onclick="submitAns()">إرسال الإجابة ✅</button>
+            <p id="wait-msg" class="hidden">تم استلام إجابتك.. انتظر الباقي</p>
         </div>
 
-        <div id="result-screen" class="screen hidden">
-            <h2 id="reveal-title" class="gold-text">الإجابة هي:</h2>
-            <h1 id="correct-answer" style="color: #00ff88;"></h1>
-            <hr>
-            <h3>لوحة الصدارة 🏆</h3>
-            <div id="leaderboard" class="glass-box"></div>
-            <div id="host-nav" class="hidden">
-                <button class="action-btn" onclick="nextQuestion()">السؤال التالي ➡️</button>
-                <button class="game-card" onclick="location.reload()">تغيير اللعبة 🏠</button>
+        <div id="judge-screen" class="screen hidden">
+            <h3 class="gold-text">مرحلة التحكيم والكشف ⚖️</h3>
+            <div id="answers-to-judge" class="glass-box"></div>
+            <div id="official-ans" class="glass-box hidden" style="border-color:#00ff88">
+                <p>الإجابة النموذجية:</p>
+                <h2 id="model-ans"></h2>
+            </div>
+            <div id="host-controls" class="hidden">
+                <button class="action-btn" onclick="nextRound()">السؤال التالي ➡️</button>
+                <button class="game-card" onclick="location.reload()">خروج</button>
             </div>
         </div>
     </div>
@@ -82,11 +78,12 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let me = { name: '', room: '', isHost: false, score: 0, mode: '', game: '' };
-        const data = {
-            kora: [{q: "من هداف العالم التاريخي؟", a: "رونالدو"}, {q: "نادي القرن في أفريقيا؟", a: "الاهلي"}],
-            fawazir: [{q: "شيء يكتب ولا يقرأ؟", a: "القلم"}, {q: "ينبض بلا قلب؟", a: "الساعة"}],
-            spy: ["مطار", "مستشفى", "مطعم", "ملعب", "مدرسة"]
+        let state = { name: '', room: '', isHost: false, game: '', qIdx: 0 };
+        const dataBank = {
+            kora: [{q:"هداف العالم؟", a:"رونالدو"}, {q:"نادي القرن؟", a:"الاهلي"}],
+            fawazir: [{q:"شيء يطير بلا أجنحة؟", a:"الدخان"}],
+            no_repeat: [{q:"اذكر اسم فاكهة لونها أحمر", a:"(تفاح، فراولة، رمان...)"}],
+            what_if: [{q:"لو كنت مكانك ووجدت شنطة فلوس؟", a:"(رأي اللاعب)"}]
         };
 
         function showScreen(id) {
@@ -94,102 +91,95 @@
             document.getElementById(id).classList.remove('hidden');
         }
 
-        window.setMode = (m) => { me.mode = m; showScreen('category-screen'); };
+        window.selectGame = (g) => { state.game = g; showScreen('login-screen'); };
 
-        window.selectGame = (g) => {
-            me.game = g;
-            if (me.mode === 'online') showScreen('login-screen');
-            else startLocalGame();
-        };
-
-        window.initOnline = (type) => {
-            me.name = document.getElementById('user-name').value || "لاعب_" + Math.floor(Math.random()*99);
-            me.room = type === 'create' ? Math.random().toString(36).substring(2, 6).toUpperCase() : document.getElementById('join-input').value.toUpperCase();
-            me.isHost = type === 'create';
-
-            if(me.isHost) {
-                db.ref('party/' + me.room).set({ status: 'lobby', qIdx: 0, timer: 15, gameType: me.game, reveal: false });
-            }
-            db.ref('party/' + me.room + '/players/' + me.name).set({ score: 0, guess: '' });
-            listenOnline();
+        window.initParty = (type) => {
+            state.name = document.getElementById('user-name').value || "لاعب";
+            state.room = type === 'create' ? Math.random().toString(36).substring(2,6).toUpperCase() : document.getElementById('join-input').value.toUpperCase();
+            state.isHost = type === 'create';
+            
+            if(state.isHost) db.ref('hub/'+state.room).set({status:'lobby', qIdx:0, game:state.game, timer:20});
+            db.ref('hub/'+state.room+'/players/'+state.name).set({score:0, ans:'', submitted: false});
+            
+            listen();
             showScreen('lobby-screen');
         };
 
-        function listenOnline() {
-            document.getElementById('room-id-view').innerText = "غرفة: " + me.room;
-            db.ref('party/' + me.room).on('value', (snap) => {
+        function listen() {
+            document.getElementById('room-display').innerText = "كود: " + state.room;
+            db.ref('hub/'+state.room).on('value', (snap) => {
                 const val = snap.val(); if(!val) return;
                 
-                const pList = document.getElementById('players-list');
-                const board = document.getElementById('leaderboard');
-                const feed = document.getElementById('feed-stream');
-                pList.innerHTML = ""; board.innerHTML = ""; feed.innerHTML = "";
-                
-                let players = [];
-                for(let p in val.players) {
-                    pList.innerHTML += `<span> 👤 ${p} </span>`;
-                    players.push({name: p, score: val.players[p].score});
-                    if(val.players[p].guess) feed.innerHTML += `<p><strong>${p}:</strong> ${val.players[p].guess}</p>`;
-                }
+                // قائمة اللاعبين
+                const list = document.getElementById('players-list');
+                list.innerHTML = "";
+                for(let p in val.players) list.innerHTML += `<p>👤 ${p} - ${val.players[p].score}ن</p>`;
 
                 if(val.status === 'playing') {
                     showScreen('game-screen');
-                    const currentQ = data[val.gameType][val.qIdx];
-                    document.getElementById('question-display').innerText = val.gameType === 'spy' ? "ابحث عن الجاسوس!" : currentQ.q;
-                    document.getElementById('timer-bar').style.width = (val.timer / 15 * 100) + "%";
-                } 
-                else if(val.status === 'results') {
-                    showScreen('result-screen');
-                    const ans = data[val.gameType][val.qIdx];
-                    document.getElementById('correct-answer').innerText = ans.a || "انتهى الوقت!";
-                    players.sort((a,b) => b.score - a.score).forEach(p => {
-                        board.innerHTML += `<p>${p.name}: ${p.score} نقطة</p>`;
-                    });
-                    if(me.isHost) document.getElementById('host-nav').classList.remove('hidden');
+                    document.getElementById('q-view').innerText = dataBank[val.game][val.qIdx].q;
+                    document.getElementById('timer-bar').style.width = (val.timer/20*100) + "%";
+                } else if(val.status === 'judging') {
+                    showScreen('judge-screen');
+                    renderJudgement(val);
                 }
-                if(me.isHost) document.getElementById('host-start-btn').classList.toggle('hidden', val.status !== 'lobby');
+                if(state.isHost) document.getElementById('start-btn').classList.toggle('hidden', val.status !== 'lobby');
             });
         }
 
-        window.sendLiveGuess = () => {
-            const val = document.getElementById('answer-input').value;
-            db.ref('party/' + me.room + '/players/' + me.name).update({ guess: val });
-            db.ref('party/' + me.room).once('value', (s) => {
-                const q = data[s.val().gameType][s.val().qIdx];
-                if(val.trim() === q.a) {
-                    me.score += 10;
-                    db.ref('party/' + me.room + '/players/' + me.name).update({ score: me.score, guess: '✅ صح!' });
-                    document.getElementById('answer-input').value = "";
-                }
-            });
+        window.submitAns = () => {
+            const a = document.getElementById('ans-input').value;
+            db.ref('hub/'+state.room+'/players/'+state.name).update({ans: a, submitted: true});
+            document.getElementById('ans-input').classList.add('hidden');
+            document.getElementById('wait-msg').classList.remove('hidden');
         };
 
-        window.startParty = () => {
-            db.ref('party/' + me.room).update({ status: 'playing' });
-            let t = 15;
-            let inter = setInterval(() => {
-                t--; db.ref('party/' + me.room).update({ timer: t });
-                if(t <= 0) {
-                    clearInterval(inter);
-                    db.ref('party/' + me.room).update({ status: 'results' });
-                }
+        window.launch = () => {
+            db.ref('hub/'+state.room).update({status: 'playing'});
+            let t = 20;
+            let i = setInterval(() => {
+                t--; db.ref('hub/'+state.room).update({timer: t});
+                if(t <= 0) { clearInterval(i); db.ref('hub/'+state.room).update({status: 'judging'}); }
             }, 1000);
         };
 
-        window.nextQuestion = () => {
-            db.ref('party/' + me.room).once('value', (s) => {
-                db.ref('party/' + me.room).update({ qIdx: s.val() + 1, status: 'playing', timer: 15 });
-                window.startParty();
+        function renderJudgement(val) {
+            const div = document.getElementById('answers-to-judge');
+            div.innerHTML = "<h4>إجابات اللاعبين:</h4>";
+            const allAns = [];
+            
+            for(let p in val.players) {
+                const pAns = val.players[p].ans;
+                const isDup = Object.values(val.players).filter(x => x.ans === pAns && pAns !== '').length > 1;
+                
+                let style = isDup && val.game === 'no_repeat' ? "color:red" : "";
+                let txt = isDup && val.game === 'no_repeat' ? `${pAns} (مكرر! ❌)` : pAns;
+
+                div.innerHTML += `
+                    <div style="margin:10px; border-bottom:1px solid #333; padding:5px;">
+                        <span style="${style}"><strong>${p}:</strong> ${txt}</span>
+                        ${state.isHost ? `<button onclick="givePoint('${p}')" style="margin-right:10px;">✅ صح</button>` : ''}
+                    </div>`;
+            }
+            
+            document.getElementById('model-ans').innerText = dataBank[val.game][val.qIdx].a;
+            document.getElementById('official-ans').classList.remove('hidden');
+            if(state.isHost) document.getElementById('host-controls').classList.remove('hidden');
+        }
+
+        window.givePoint = (pName) => {
+            db.ref('hub/'+state.room+'/players/'+pName+'/score').transaction(s => (s||0)+10);
+        };
+
+        window.nextRound = () => {
+            db.ref('hub/'+state.room).once('value', s => {
+                const next = s.val().qIdx + 1;
+                db.ref('hub/'+state.room).update({qIdx: next, status: 'playing', timer: 20});
+                // ريست الإجابات
+                for(let p in s.val().players) db.ref('hub/'+state.room+'/players/'+p).update({ans:'', submitted:false});
+                window.launch();
             });
         };
-        
-        // كود اللعب المحلي البسيط
-        function startLocalGame() {
-            showScreen('game-screen');
-            document.getElementById('action-area').innerHTML = `<button class="action-btn" onclick="location.reload()">العودة للرئيسية</button>`;
-            const q = data[me.game][0];
-            document.getElementById('question-display').innerText = q.q || "اللعب المحلي مفعل - اختبر نفسك";
-        }
     </script>
 </body>
 </html>
