@@ -7,44 +7,34 @@ const firebaseConfig = {
     appId: "1:726415224604:web:3f436ef230254a5ee914d9",
     databaseURL: "https://diplomatic-games-default-rtdb.firebaseio.com"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let game = { roomId: '', type: '', players: [], scores: {}, currentIdx: 0, round: 0, isHost: false };
+let game = { roomId: '', isHost: false, type: '', round: 0 };
 
 const dataBank = {
     kora: [{q:"من هداف العالم التاريخي؟", a:"رونالدو"}, {q:"بطل كأس العالم 2022؟", a:"الأرجنتين"}],
     fawazir: [{q:"شيء يكتب ولا يقرأ؟", a:"القلم"}, {q:"ينبض بلا قلب؟", a:"الساعة"}],
-    spy: ["مطار", "مستشفى", "ملعب", "مطعم"]
+    spy: ["مطار", "مستشفى", "مطعم", "حديقة"]
 };
 
-// 1. وظائف التنقل
 window.showScreen = function(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
 }
 
-// 2. إنشاء غرفة (المضيف)
 window.createNewRoom = function() {
     const rId = Math.random().toString(36).substring(2, 6).toUpperCase();
     game.roomId = rId;
     game.isHost = true;
-    
-    db.ref('rooms/' + rId).set({
-        status: 'waiting',
-        currentIdx: 0,
-        round: 0,
-        showAnswer: false,
-        gameType: ''
-    }).then(() => {
+    db.ref('rooms/' + rId).set({ status: 'waiting', round: 0, showAnswer: false, gameType: '' })
+    .then(() => {
         alert("كود الغرفة: " + rId);
         listenToRoom(rId);
         window.showScreen('category-screen');
     });
 }
 
-// 3. الدخول لغرفة (اللاعب التاني)
 window.joinRoom = function() {
     const rId = document.getElementById('room-input').value.toUpperCase();
     db.ref('rooms/' + rId).once('value', (snapshot) => {
@@ -53,66 +43,59 @@ window.joinRoom = function() {
             game.isHost = false;
             listenToRoom(rId);
             window.showScreen('game-screen');
-        } else {
-            alert("الكود ده غلط!");
-        }
+        } else { alert("الكود غلط!"); }
     });
 }
 
-// 4. الاستماع للتغييرات (المزامنة)
 function listenToRoom(rId) {
     db.ref('rooms/' + rId).on('value', (snapshot) => {
-        const remoteData = snapshot.val();
-        if (!remoteData) return;
+        const val = snapshot.val();
+        if (!val) return;
 
-        game.currentIdx = remoteData.currentIdx;
-        game.round = remoteData.round;
-        game.type = remoteData.gameType;
+        game.type = val.gameType;
+        game.round = val.round;
 
-        // مزامنة إظهار الإجابة
-        if (remoteData.showAnswer) {
-            document.getElementById('answer-text').classList.remove('hidden');
-            document.getElementById('show-btn').classList.add('hidden');
-            if (game.isHost) document.getElementById('score-btns').style.display = 'flex';
+        // تحديث واجهة اللاعب التاني (الضيف)
+        if (!game.isHost) {
+            document.getElementById('host-controls').classList.add('hidden');
+            document.getElementById('waiting-msg').classList.remove('hidden');
         } else {
-            document.getElementById('answer-text').classList.add('hidden');
-            document.getElementById('show-btn').classList.remove('hidden');
-            document.getElementById('score-btns').style.display = 'none';
+            document.getElementById('host-controls').classList.remove('hidden');
+            document.getElementById('waiting-msg').classList.add('hidden');
         }
 
-        updateUI();
+        // مزامنة إظهار الإجابة
+        if (val.showAnswer) {
+            document.getElementById('answer-text').classList.remove('hidden');
+        } else {
+            document.getElementById('answer-text').classList.add('hidden');
+        }
+
+        if (game.type) updateQuestionUI();
     });
 }
 
-// 5. تحديث الشاشة
-function updateUI() {
-    if (!game.type) return;
-    const currentQuestion = dataBank[game.type][game.round % dataBank[game.type].length];
-    document.getElementById('question-text').innerText = currentQuestion.q;
-    document.getElementById('answer-text').innerText = "الإجابة: " + currentQuestion.a;
-    document.getElementById('player-display').innerText = "جاري اللعب...";
-}
-
-// 6. اختيار اللعبة (للمضيف)
-window.setGame = function(t) {
+window.setGameType = function(t) {
     if (game.isHost) {
-        db.ref('rooms/' + game.roomId).update({ gameType: t });
-        window.showScreen('setup-screen');
+        db.ref('rooms/' + game.roomId).update({ gameType: t, status: 'playing' });
+        window.showScreen('game-screen');
     }
 }
 
-// 7. إظهار الإجابة (للمضيف)
+function updateQuestionUI() {
+    const qList = dataBank[game.type];
+    const current = qList[game.round % qList.length];
+    document.getElementById('question-text').innerText = current.q || current;
+    document.getElementById('answer-text').innerText = "الإجابة: " + (current.a || "خمن المكان!");
+}
+
 window.revealAnswer = function() {
-    if (game.isHost) {
-        db.ref('rooms/' + game.roomId).update({ showAnswer: true });
-    }
+    if (game.isHost) db.ref('rooms/' + game.roomId).update({ showAnswer: true });
 }
 
-// 8. النقل للسؤال التالي
-window.handleNext = function(win) {
+window.handleNext = function(isCorrect) {
     if (game.isHost) {
         db.ref('rooms/' + game.roomId).update({
-            currentIdx: game.currentIdx + 1,
             round: game.round + 1,
             showAnswer: false
         });
