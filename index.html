@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIPLOMATIC HUB - FULL GAMES</title>
+    <title>DIPLOMATIC HUB - PRO 80</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,22 +11,22 @@
         <h1 class="gold-text">DIPLOMATIC HUB</h1>
 
         <div id="category-screen" class="screen">
-            <h3>اختر نوع اللعبة</h3>
-            <button class="game-card" onclick="setGame('kora')">⚽ كورة</button>
-            <button class="game-card" onclick="setGame('fawazir')">🌙 فوازير</button>
-            <button class="game-card" onclick="setGame('no_repeat')">🚫 بدون تكرار</button>
-            <button class="game-card" onclick="setGame('what_if')">🤔 لو كنت مكانك</button>
+            <h3>اختر نوع التحدي</h3>
+            <button class="game-card" onclick="setGame('kora')">⚽ كورة (20 سؤال)</button>
+            <button class="game-card" onclick="setGame('fawazir')">🌙 فوازير (20 سؤال)</button>
+            <button class="game-card" onclick="setGame('no_repeat')">🚫 بدون تكرار (20 سؤال)</button>
+            <button class="game-card" onclick="setGame('what_if')">🤔 لو كنت مكانك (20 سؤال)</button>
             <div style="margin-top:20px;">
-                <p>عدد الأسئلة:</p>
+                <p>حدد عدد الأسئلة لهذا الجيم:</p>
                 <select id="q-count-select" class="action-btn" style="background:#222; color:white;">
                     <option value="10">10 أسئلة</option>
-                    <option value="15">15 سؤال</option>
+                    <option value="20" selected>20 سؤال</option>
                 </select>
             </div>
         </div>
 
         <div id="online-setup-screen" class="screen hidden">
-            <input type="text" id="user-name" placeholder="اسمك">
+            <input type="text" id="user-name" placeholder="اسمك المستعار">
             <button class="action-btn" onclick="initRoom('create')">➕ إنشاء غرفة</button>
             <input type="text" id="join-input" placeholder="كود الغرفة">
             <button class="game-card" onclick="initRoom('join')">🔗 انضمام</button>
@@ -36,36 +36,35 @@
         <div id="lobby-screen" class="screen hidden">
             <h1 id="room-display" class="gold-text" style="font-size: 3rem;"></h1>
             <div class="glass-box">
-                <p>الأبطال المتصلون:</p>
+                <p>الأبطال المتصلون حالياً:</p>
                 <div id="players-list"></div>
             </div>
-            <button id="host-start-btn" class="action-btn hidden" onclick="triggerStart()">ابدأ الجيم 🚀</button>
-            <button class="action-btn" style="background:transparent; color:#888;" onclick="location.reload()">🏠 خروج</button>
+            <button id="host-start-btn" class="action-btn hidden" onclick="triggerStart()">ابدأ المواجهة 🚀</button>
         </div>
 
         <div id="game-screen" class="screen hidden">
             <div class="timer-wrapper"><div id="timer-bar"></div></div>
-            <p id="q-info" style="color:var(--gold);"></p>
+            <p id="q-info" style="color:var(--gold); font-weight:bold;"></p>
             <div class="glass-box">
                 <h3 id="question-text">...</h3>
             </div>
             <div id="input-zone">
-                <input type="text" id="ans-input" placeholder="اكتب إجابتك هنا">
+                <input type="text" id="ans-input" placeholder="اكتب إجابتك بسرعة!">
                 <button class="action-btn" onclick="submitProcess()">إرسال ✅</button>
             </div>
-            <div id="instant-feedback" class="hidden"></div>
+            <div id="instant-feedback" class="hidden" style="font-size: 1.3rem; margin-top:15px; font-weight:bold;"></div>
         </div>
 
         <div id="result-screen" class="screen hidden">
-            <h3 class="gold-text">النتائج 🏆</h3>
+            <h3 class="gold-text">ترتيب الأبطال 🏆</h3>
             <div id="leaderboard" class="glass-box"></div>
-            <div class="glass-box" id="ans-box" style="border: 1px solid #00ff88;">
-                <p>الإجابة الصح كانت:</p>
+            <div class="glass-box" style="border: 1px solid #00ff88;">
+                <p>الإجابة النموذجية:</p>
                 <h2 id="correct-reveal" style="color:#00ff88;"></h2>
             </div>
             <div id="host-controls" class="hidden">
                 <button class="action-btn" onclick="triggerStart()">السؤال التالي ➡️</button>
-                <button class="game-card" onclick="location.reload()">🏠 العودة للرئيسية</button>
+                <button class="game-card" onclick="location.reload()">🏠 إنهاء الجيم</button>
             </div>
         </div>
     </div>
@@ -86,26 +85,20 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let me = { name: '', room: '', isHost: false, gameType: '', maxQ: 10, score: 0 };
+        let me = { name: '', room: '', isHost: false, gameType: '', maxQ: 20, score: 0 };
         
         const dataBank = {
             kora: [
-                {q:"من هداف العالم التاريخي؟", a:"رونالدو"}, {q:"نادي القرن في أفريقيا؟", a:"الاهلي"},
-                {q:"بطل مونديال 2022؟", a:"الارجنتين"}, {q:"مدرب مانشستر سيتي؟", a:"غوارديولا"},
-                {q:"أكثر لاعب فاز بالكرة الذهبية؟", a:"ميسي"}, {q:"بطل يورو 2024؟", a:"اسبانيا"}
+                {q:"من هداف العالم التاريخي؟", a:"رونالدو"}, {q:"نادي القرن في أفريقيا؟", a:"الاهلي"}, {q:"بطل مونديال 2022؟", a:"الارجنتين"}, {q:"مدرب السيتي الحالي؟", a:"غوارديولا"}, {q:"أكثر لاعب فاز بالبالون دور؟", a:"ميسي"}, {q:"بطل يورو 2024؟", a:"اسبانيا"}, {q:"أين يلعب مبابي حالياً؟", a:"ريال مدريد"}, {q:"ملعب برشلونة الشهير؟", a:"كامب نو"}, {q:"لقب منتخب المغرب؟", a:"اسود الاطلس"}, {q:"من هو الظاهرة؟", a:"رونالدو البرازيلي"}, {q:"نادي يلعب له محمد صلاح؟", a:"ليفربول"}, {q:"بطل دوري ابطال اوروبا 2024؟", a:"ريال مدريد"}, {q:"أسرع لاعب في العالم؟", a:"مبابي"}, {q:"كم عدد تبديلات كرة القدم؟", a:"5"}, {q:"أين يقع ملعب ماراكانا؟", a:"البرازيل"}, {q:"بطل افريقيا 2023؟", a:"ساحل العاج"}, {q:"من فاز بكأس العالم 2010؟", a:"اسبانيا"}, {q:"كم عدد مدافعي خطة 4-4-2؟", a:"4"}, {q:"صاحب هدف القاضية ممكن؟", a:"افشة"}, {q:"أين ستقام كأس العالم 2026؟", a:"امريكا"}
             ],
             fawazir: [
-                {q:"شيء يطير بلا أجنحة؟", a:"الدخان"}, {q:"له أسنان ولا يعض؟", a:"المشط"},
-                {q:"شيء يكتب ولا يقرأ؟", a:"القلم"}, {q:"مليء بالثقوب ويحفظ الماء؟", a:"الاسفنج"}
+                {q:"شيء يطير بلا أجنحة؟", a:"الدخان"}, {q:"له أسنان ولا يعض؟", a:"المشط"}, {q:"شيء يكتب ولا يقرأ؟", a:"القلم"}, {q:"مليء بالثقوب ويحفظ الماء؟", a:"الاسفنج"}, {q:"ابن أمك وأبوك وليس أخاك؟", a:"انت"}, {q:"يمشي بلا أرجل ويدخل الأذنين؟", a:"الصوت"}, {q:"له رأس ولا عين له؟", a:"الدبوس"}, {q:"كلما زاد نقص؟", a:"العمر"}, {q:"ما هو الشيء الذي لا يبرد في الثلاجة؟", a:"الفلفل"}, {q:"يتحرك حولك ولا تراه؟", a:"الهواء"}, {q:"ما هو الشيء الذي له عين ولا يرى؟", a:"الابرة"}, {q:"قلبه يأكل قشره؟", a:"الشمعة"}, {q:"يسمع بلا أذن ويتكلم بلا لسان؟", a:"التليفون"}, {q:"كم شهر في السنة فيه 28 يوم؟", a:"كل الشهور"}, {q:"شيء تذبحه وتبكي عليه؟", a:"البصل"}, {q:"ما هي الكلمة التي تبطل إذا نطقنا بها؟", a:"الصمت"}, {q:"شيء ملكك ويستخدمه الناس أكثر منك؟", a:"اسمك"}, {q:"ما هو الشيء الذي يحوي مدناً بلا بيوت؟", a:"الخريطة"}, {q:"ما هو الشيء الذي لا يمشي إلا بالضرب؟", a:"المسمار"}, {q:"شيء يقرصك ولا تراه؟", a:"الجوع"}
             ],
             no_repeat: [
-                {q:"اذكر اسم فاكهة حمراء (ممنوع التكرار)", a:"تفاح/فراولة"},
-                {q:"اذكر ماركة سيارات (ممنوع التكرار)", a:"بي ام/مرسيدس"},
-                {q:"اذكر دولة عربية (ممنوع التكرار)", a:"مصر/السعودية"}
+                {q:"اذكر اسم فاكهة حمراء", a:"تفاح"}, {q:"اذكر ماركة سيارات", a:"بي ام"}, {q:"اذكر دولة أوروبية", a:"فرنسا"}, {q:"اسم نادي مصري", a:"الزمالك"}, {q:"اذكر خضار أخضر", a:"خيار"}, {q:"اسم نبي ذكر في القرآن", a:"محمد"}, {q:"اذكر عاصمة عربية", a:"القاهرة"}, {q:"اسم لاعب كورة معتزل", a:"زيدان"}, {q:"اذكر كوكب في المجموعة الشمسية", a:"المريخ"}, {q:"اسم فيلم مصري شهير", a:"الناظر"}, {q:"اذكر تطبيق تواصل اجتماعي", a:"فيسبوك"}, {q:"اسم حيوان مفترس", a:"اسد"}, {q:"اذكر لغة عالمية", a:"العربية"}, {q:"اسم مادة دراسية", a:"رياضيات"}, {q:"اذكر عملة عالمية", a:"دولار"}, {q:"اسم صحابي جليل", a:"ابو بكر"}, {q:"اذكر لون من ألوان قوس قزح", a:"احمر"}, {q:"اسم قناة يوتيوب", a:"دحيح"}, {q:"اذكر جزء من جسم الإنسان", a:"قلب"}, {q:"اسم مدينة ساحلية", a:"اسكندرية"}
             ],
             what_if: [
-                {q:"لو كنت مكانك ولقيت شنطة فلوس؟", a:"رأي اللاعب"},
-                {q:"لو كنت مكانك وبقيت رئيس نادي؟", a:"رأي اللاعب"}
+                {q:"لو كنت مكانك ولقيت محفظة؟", a:"هرجعها"}, {q:"لو بقيت رئيس نادي بكره؟", a:"هشتري ميسي"}, {q:"لو تقدر تطير يوم واحد؟", a:"هسافر باريس"}, {q:"لو كسبت مليون جنيه؟", a:"هتصدق بيهم"}, {q:"لو بقيت غير مرئي؟", a:"هدخل البنك"}, {q:"لو رجعت بالزمن؟", a:"هصلح غلطاتي"}, {q:"لو قابلت كريستيانو؟", a:"هتصور معاه"}, {q:"لو تقدر تعيش في الفضاء؟", a:"هروح المريخ"}, {q:"لو بقيت مدير مدرستك؟", a:"هغيي الطلاب"}, {q:"لو لقيت مصباح علاء الدين؟", a:"هطلب ثروة"}, {q:"لو بقيت مدرب منتخب مصر؟", a:"هاخد افريقيا"}, {q:"لو تقدر تغير اسمك؟", a:"هسميه صقر"}, {q:"لو معاك مفتاح كل الأبواب؟", a:"هفتح كل الاسرار"}, {q:"لو بقيت بطل خارق؟", a:"هحمي الناس"}, {q:"لو تقدر تتكلم مع الحيوانات؟", a:"هسأل الاسد"}, {q:"لو عشت في جزيرة لوحدك؟", a:"هصطاد سمك"}, {q:"لو بقيت طباخ عالمي؟", a:"هعمل بيتزا"}, {q:"لو تقدر تسافر للمستقبل؟", a:"هعرف حظي"}, {q:"لو بقيت أصغر شخص في العالم؟", a:"هلعب طول اليوم"}, {q:"لو معاك آلة زمن؟", a:"هروح عصر الفراعنة"}
             ]
         };
 
@@ -126,7 +119,7 @@
             me.isHost = type === 'create';
 
             if(me.isHost) {
-                db.ref('party/' + me.room).set({ status: 'lobby', qIdx: 0, game: me.gameType, maxQ: me.maxQ, timer: 20 });
+                db.ref('party/' + me.room).set({ status: 'lobby', qIdx: 0, game: me.gameType, maxQ: me.maxQ, timer: 15 });
             }
             db.ref('party/' + me.room + '/players/' + me.name).set({ score: 0, submitted: false });
             listen();
@@ -145,7 +138,7 @@
                 for(let p in data.players) {
                     count++;
                     pList.innerHTML += `<p>👤 ${p}: ${data.players[p].score}</p>`;
-                    board.innerHTML += `<p style="display:flex; justify-content:space-between;"><span>${p}</span><span>${data.players[p].score}ن</span></p>`;
+                    board.innerHTML += `<p style="display:flex; justify-content:space-between; border-bottom:1px solid #222;"><span>${p}</span><span>${data.players[p].score}ن</span></p>`;
                     if(!data.players[p].submitted) allDone = false;
                 }
 
@@ -158,11 +151,11 @@
                     document.getElementById('input-zone').classList.remove('hidden');
                     document.getElementById('instant-feedback').classList.add('hidden');
                     document.getElementById('q-info').innerText = `سؤال ${data.qIdx + 1} من ${data.maxQ}`;
-                    document.getElementById('question-text').innerText = dataBank[data.game][data.qIdx]?.q || "انتهت الأسئلة";
-                    document.getElementById('timer-bar').style.width = (data.timer / 20 * 100) + "%";
+                    document.getElementById('question-text').innerText = dataBank[data.game][data.qIdx]?.q || "انتهى الجيم!";
+                    document.getElementById('timer-bar').style.width = (data.timer / 15 * 100) + "%";
                 } else if(data.status === 'results') {
                     showScreen('result-screen');
-                    document.getElementById('correct-reveal').innerText = dataBank[data.game][data.qIdx]?.a || "جاري التقييم..";
+                    document.getElementById('correct-reveal').innerText = dataBank[data.game][data.qIdx]?.a || "--";
                     document.getElementById('host-controls').classList.toggle('hidden', !me.isHost);
                 }
                 if(me.isHost) document.getElementById('host-start-btn').classList.toggle('hidden', data.status !== 'lobby');
@@ -172,23 +165,16 @@
         window.submitProcess = () => {
             const val = document.getElementById('ans-input').value.trim();
             db.ref('party/' + me.room).once('value', s => {
-                const currentData = s.val();
-                const correct = dataBank[currentData.game][currentData.qIdx].a;
+                const correct = dataBank[s.val().game][s.val().qIdx].a;
                 const feedback = document.getElementById('instant-feedback');
                 feedback.classList.remove('hidden');
 
-                if(currentData.game === 'kora' || currentData.game === 'fawazir') {
-                    if(val.toLowerCase() === correct.toLowerCase()) {
-                        feedback.innerHTML = "✅ صح!"; feedback.style.color = "#00ff88";
-                        me.score += 10;
-                    } else {
-                        feedback.innerHTML = `❌ خطأ! الصح: ${correct}`; feedback.style.color = "#ff4444";
-                    }
+                if(val.toLowerCase() === correct.toLowerCase()) {
+                    feedback.innerHTML = "✅ صح!"; feedback.style.color = "#00ff88";
+                    me.score += 10;
                 } else {
-                    feedback.innerHTML = "✅ تم استلام إجابتك!"; feedback.style.color = "white";
-                    me.score += 5; // ألعاب الرأي والتكرار تأخذ نقاط تلقائية للمشاركة
+                    feedback.innerHTML = `❌ غلط! الصح: ${correct}`; feedback.style.color = "#ff4444";
                 }
-
                 db.ref('party/' + me.room + '/players/' + me.name).update({ score: me.score, submitted: true });
                 document.getElementById('input-zone').classList.add('hidden');
                 document.getElementById('ans-input').value = "";
@@ -198,12 +184,12 @@
         window.triggerStart = () => {
             db.ref('party/' + me.room).once('value', s => {
                 let idx = s.val().status === 'results' ? s.val().qIdx + 1 : 0;
-                if(idx >= s.val().maxQ || !dataBank[s.val().game][idx]) { alert("الجيم خلص!"); location.reload(); return; }
+                if(idx >= s.val().maxQ) { alert("انتهى التحدي!"); location.reload(); return; }
                 
                 for(let p in s.val().players) db.ref('party/'+me.room+'/players/'+p).update({submitted: false});
-                db.ref('party/' + me.room).update({ status: 'playing', qIdx: idx, timer: 20 });
+                db.ref('party/' + me.room).update({ status: 'playing', qIdx: idx, timer: 15 });
                 
-                let t = 20;
+                let t = 15;
                 let i = setInterval(() => {
                     t--; db.ref('party/' + me.room).update({ timer: t });
                     if(t <= 0) { clearInterval(i); db.ref('party/' + me.room).update({ status: 'results' }); }
