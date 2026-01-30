@@ -10,77 +10,71 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let game = { type: '', players: [], scores: {}, round: 0, pIdx: 0, roomId: '' };
-
-const questions = {
-    kora: [{q: "من هداف العالم التاريخي؟", a: "كريستيانو رونالدو"}, {q: "نادي القرن في أفريقيا؟", a: "الأهلي"}],
-    fawazir: [{q: "شيء يكتب ولا يقرأ؟", a: "القلم"}],
-    spy: ["مطار", "مستشفى", "مطعم"]
+let currentPlay = { type: '', players: [], scores: {}, round: 0, idx: 0 };
+const qBank = {
+    kora: [{q: "من هداف العالم؟", a: "كريستيانو رونالدو"}, {q: "بطل كأس العالم 2022؟", a: "الأرجنتين"}, {q: "نادي القرن الأفريقي؟", a: "الأهلي"}],
+    fawazir: [{q: "يكتب ولا يقرأ؟", a: "القلم"}, {q: "ينبض بلا قلب؟", a: "الساعة"}],
+    spy: ["مطار", "مستشفى", "ملعب", "مطعم"]
 };
 
-// وظائف التنقل (الجديدة والمضمونة)
-function goToOnlineLobby() {
-    document.getElementById('connection-screen').classList.add('hidden');
-    document.getElementById('online-lobby').classList.remove('hidden');
-}
+// وظائف التحكم في الشاشات
+function openLobby() { hideAll(); document.getElementById('online-lobby').classList.remove('hidden'); }
+function openCategories() { hideAll(); document.getElementById('category-screen').classList.remove('hidden'); }
+function goToSetup(type) { currentPlay.type = type; hideAll(); document.getElementById('setup-screen').classList.remove('hidden'); }
 
-function goToLocalCategories() {
-    document.getElementById('connection-screen').classList.add('hidden');
-    document.getElementById('category-screen').classList.remove('hidden');
-}
-
-function createRoom() {
+function createNewRoom() {
     const rId = Math.random().toString(36).substring(2, 6).toUpperCase();
-    db.ref('rooms/' + rId).set({ status: 'waiting', createdAt: Date.now() })
-    .then(() => {
-        alert("كود غرفتك هو: " + rId);
-        game.roomId = rId;
-        document.getElementById('online-lobby').classList.add('hidden');
-        document.getElementById('category-screen').classList.remove('hidden');
+    db.ref('rooms/' + rId).set({ status: 'waiting' }).then(() => {
+        alert("كود غرفتك: " + rId);
+        openCategories();
     });
 }
 
-function setupPlayers(cat) {
-    game.type = cat;
-    document.getElementById('category-screen').classList.add('hidden');
-    document.getElementById('setup-screen').classList.remove('hidden');
+function makeNameInputs() {
+    const val = document.getElementById('player-count').value;
+    const box = document.getElementById('names-container');
+    box.innerHTML = '';
+    for(let i=1; i<=val; i++) box.innerHTML += `<input type="text" placeholder="اسم اللاعب ${i}" class="p-name">`;
 }
 
-function updateInputs() {
-    const n = document.getElementById('player-count').value;
-    const container = document.getElementById('names-container');
-    container.innerHTML = '';
-    for(let i=1; i<=n; i++) container.innerHTML += `<input type="text" placeholder="اسم اللاعب ${i}" class="p-name">`;
-}
-
-function startPlay() {
+function startTheGame() {
     const inputs = document.querySelectorAll('.p-name');
-    game.players = Array.from(inputs).map((inp, i) => inp.value || `لاعب ${i+1}`);
-    game.players.forEach(p => game.scores[p] = 0);
-    document.getElementById('setup-screen').classList.add('hidden');
+    currentPlay.players = Array.from(inputs).map((inp, i) => inp.value || `لاعب ${i+1}`);
+    currentPlay.players.forEach(p => currentPlay.scores[p] = 0);
+    hideAll();
     document.getElementById('game-screen').classList.remove('hidden');
-    loadQ();
+    refreshQ();
 }
 
-function loadQ() {
-    document.getElementById('current-p').innerText = game.players[game.pIdx];
+function refreshQ() {
+    document.getElementById('current-p').innerText = currentPlay.players[currentPlay.idx];
     document.getElementById('a-text').classList.add('hidden');
     document.getElementById('score-controls').classList.add('hidden');
     document.getElementById('show-ans-btn').classList.remove('hidden');
-    const item = questions[game.type][game.round % questions[game.type].length];
-    document.getElementById('q-text').innerText = (game.type === 'spy') ? "المكان السري: " + questions.spy[Math.floor(Math.random()*3)] : item.q;
-    document.getElementById('a-text').innerText = (game.type === 'spy') ? "الجاسوس لازم يخمن" : "الإجابة: " + item.a;
+    
+    if(currentPlay.type === 'spy') {
+        document.getElementById('q-text').innerText = "المكان السري: " + qBank.spy[Math.floor(Math.random()*qBank.spy.length)];
+        document.getElementById('a-text').innerText = "الجاسوس عليه التخمين!";
+    } else {
+        const item = qBank[currentPlay.type][currentPlay.round % qBank[currentPlay.type].length];
+        document.getElementById('q-text').innerText = item.q;
+        document.getElementById('a-text').innerText = "الإجابة: " + item.a;
+    }
 }
 
-function revealAns() {
+function reveal() {
     document.getElementById('a-text').classList.remove('hidden');
     document.getElementById('show-ans-btn').classList.add('hidden');
     document.getElementById('score-controls').classList.remove('hidden');
 }
 
-function nextPlayer(win) {
-    if(win) game.scores[game.players[game.pIdx]]++;
-    game.pIdx++;
-    if(game.pIdx >= game.players.length) { game.pIdx = 0; game.round++; }
-    if(game.round < 5) loadQ(); else alert("انتهت اللعبة!");
+function recordPoint(win) {
+    if(win) currentPlay.scores[currentPlay.players[currentPlay.idx]]++;
+    currentPlay.idx++;
+    if(currentPlay.idx >= currentPlay.players.length) { currentPlay.idx = 0; currentPlay.round++; }
+    if(currentPlay.round < 5) refreshQ(); else alert("خلصنا! شوف النتيجة.");
+}
+
+function hideAll() {
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
 }
