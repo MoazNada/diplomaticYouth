@@ -3,40 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIPLOMATIC HUB</title>
+    <title>DIPLOMATIC HUB PRO</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="app" class="container">
         <h1 class="gold-text">DIPLOMATIC HUB</h1>
 
-        <div id="setup-screen" class="screen">
-            <p>اختر عدد اللاعبين (2 - 10):</p>
-            <input type="number" id="player-count" min="2" max="10" value="2" onchange="generateNameInputs()">
-            <div id="names-container">
-                <input type="text" placeholder="اسم اللاعب 1" class="player-name-input">
-                <input type="text" placeholder="اسم اللاعب 2" class="player-name-input">
-            </div>
-            <button class="game-card" onclick="savePlayersAndGoToMenu()">دخول اللعبة</button>
+        <div id="connection-screen" class="screen">
+            <button class="game-card shadow-gold" onclick="setConnection('online')">🌐 لعب أونلاين</button>
+            <button class="game-card shadow-gold" onclick="setConnection('local')">🏠 لعب محلي</button>
         </div>
 
-        <div id="main-menu" class="screen hidden">
-            <button class="game-card" onclick="startGame('kora')">⚽ تحدي الكورة</button>
-            <button class="game-card" onclick="startGame('fawazir')">🌙 فوازير رمضان</button>
-            <button class="game-card" onclick="startGame('spy')">🕵️ مين الجاسوس؟</button>
-            <button class="back-nav-btn" onclick="location.reload()">رجوع</button>
+        <div id="category-screen" class="screen hidden">
+            <h3>اختر نوع التحدي</h3>
+            <button class="game-card" onclick="setCategory('kora')">⚽ تحدي الكورة</button>
+            <button class="game-card" onclick="setCategory('fawazir')">🌙 فوازير رمضان</button>
+            <button class="game-card" onclick="setCategory('spy')">🕵️ مين الجاسوس؟</button>
+        </div>
+
+        <div id="setup-screen" class="screen hidden">
+            <p>عدد الأبطال (2-10):</p>
+            <input type="number" id="player-count" min="2" max="10" value="2" onchange="generateInputs()">
+            <div id="names-container"></div>
+            <button class="action-btn" onclick="startBattle()">ابدأ المعركة</button>
         </div>
 
         <div id="game-screen" class="screen hidden">
-            <div id="turn-info" class="gold-text" style="font-size: 1.2rem;">دور: <span id="current-player-display"></span></div>
-            <div class="game-card">
-                <p id="question-text">جاري التحميل...</p>
-                <p id="answer-text" class="hidden" style="color: #00ff00; margin-top: 15px; border-top: 1px solid #444; padding-top: 10px;"></p>
+            <div id="turn-info" class="gold-text">دور اللاعب: <span id="current-p"></span></div>
+            <div class="glass-box">
+                <p id="q-text"></p>
+                <p id="a-text" class="hidden-ans"></p>
             </div>
-            <button id="show-btn" class="action-btn" onclick="revealAnswer()">إظهار الإجابة</button>
-            <div id="score-btns" class="hidden" style="display: flex; gap: 10px;">
-                <button class="action-btn" style="background: #28a745;" onclick="handleScore(true)">صح (+1)</button>
-                <button class="action-btn" style="background: #dc3545;" onclick="handleScore(false)">خطأ</button>
+            <button id="show-ans-btn" class="action-btn" onclick="showAnswer()">إظهار الإجابة</button>
+            <div id="score-controls" class="hidden flex-gap">
+                <button class="btn-success" onclick="handleScore(true)">صح ✅</button>
+                <button class="btn-danger" onclick="handleScore(false)">غلط ❌</button>
             </div>
         </div>
 
