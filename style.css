@@ -3,59 +3,85 @@
     --dark-bg: #0a0a0a;
     --card-bg: #1a1a1a;
     --text: #ffffff;
+    --success: #28a745;
 }
 
 body {
     background-color: var(--dark-bg);
     color: var(--text);
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     display: flex;
     justify-content: center;
-    align-items: center;
     min-height: 100vh;
+    direction: rtl;
 }
 
 .container {
-    width: 90%;
-    max-width: 500px;
+    width: 95%;
+    max-width: 600px;
+    padding: 20px;
     text-align: center;
 }
 
 .gold-text {
     color: var(--gold);
-    text-shadow: 0 0 15px rgba(212, 175, 55, 0.6);
-    font-size: 2.5rem;
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+    font-size: 2.2rem;
+    margin-bottom: 20px;
 }
 
+/* لوحة النقاط والترتيب */
+.points-grid {
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid var(--gold);
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.points-grid h3 {
+    margin-top: 0;
+    color: var(--gold);
+}
+
+.points-grid p {
+    font-size: 1.1rem;
+    border-bottom: 1px dashed #333;
+    padding: 5px 0;
+}
+
+/* الكروت والأزرار */
 .game-card {
     background: var(--card-bg);
     border: 2px solid var(--gold);
-    border-radius: 20px;
-    padding: 25px;
-    margin: 15px 0;
+    border-radius: 15px;
+    padding: 20px;
+    margin: 10px 0;
     width: 100%;
     color: white;
-    font-size: 1.3rem;
+    font-size: 1.1rem;
     cursor: pointer;
-    transition: 0.3s;
+    transition: all 0.3s ease;
 }
 
 .game-card:hover {
-    transform: scale(1.03);
-    box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+    background: #252525;
+    transform: translateY(-3px);
 }
 
+/* أزرار الأكشن */
 .action-btn {
     background: var(--gold);
     color: black;
     border: none;
-    padding: 15px 30px;
+    padding: 15px;
     border-radius: 10px;
     font-weight: bold;
     font-size: 1.1rem;
     cursor: pointer;
     width: 100%;
+    margin-top: 10px;
 }
 
 .back-nav-btn {
@@ -65,18 +91,36 @@ body {
     padding: 10px;
     border-radius: 10px;
     cursor: pointer;
+    width: 100%;
     margin-top: 10px;
 }
 
-.hidden { display: none; }
-
-input {
+/* مدخلات النصوص والقوائم */
+input, select {
     width: 100%;
-    padding: 15px;
+    padding: 12px;
     background: #222;
     border: 1px solid var(--gold);
     color: white;
     border-radius: 10px;
     margin-bottom: 10px;
+    text-align: center;
     box-sizing: border-box;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#options-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+@media (max-width: 480px) {
+    #options-container {
+        grid-template-columns: 1fr;
+    }
 }
