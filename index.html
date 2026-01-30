@@ -11,48 +11,49 @@
         <h1 class="gold-text">DIPLOMATIC HUB</h1>
 
         <div id="connection-screen" class="screen">
-            <button class="game-card shadow-gold" onclick="setConnection('online')">🌐 لعب أونلاين</button>
-            <button class="game-card shadow-gold" onclick="setConnection('local')">🏠 لعب محلي</button>
+            <button class="game-card shadow-gold" onclick="goToOnlineLobby()">🌐 لعب أونلاين</button>
+            <button class="game-card shadow-gold" onclick="goToLocalCategories()">🏠 لعب محلي</button>
+        </div>
+
+        <div id="online-lobby" class="screen hidden">
+            <button class="action-btn" onclick="createRoom()">➕ إنشاء غرفة جديدة</button>
+            <div style="margin: 20px 0;">أو</div>
+            <input type="text" id="room-input" placeholder="ادخل كود الغرفة">
+            <button class="game-card" onclick="joinRoom()">🔗 دخول غرفة</button>
+            <button class="back-nav-btn" onclick="location.reload()">رجوع</button>
         </div>
 
         <div id="category-screen" class="screen hidden">
             <h3>اختر نوع التحدي</h3>
-            <button class="game-card" onclick="setCategory('kora')">⚽ تحدي الكورة</button>
-            <button class="game-card" onclick="setCategory('fawazir')">🌙 فوازير رمضان</button>
-            <button class="game-card" onclick="setCategory('spy')">🕵️ مين الجاسوس؟</button>
+            <button class="game-card" onclick="setupPlayers('kora')">⚽ تحدي الكورة</button>
+            <button class="game-card" onclick="setupPlayers('fawazir')">🌙 فوازير رمضان</button>
+            <button class="game-card" onclick="setupPlayers('spy')">🕵️ مين الجاسوس؟</button>
             <button class="back-nav-btn" onclick="location.reload()">رجوع</button>
         </div>
 
         <div id="setup-screen" class="screen hidden">
-            <p>عدد الأبطال (2-10):</p>
-            <input type="number" id="player-count" min="2" max="10" value="2" onchange="generateInputs()">
+            <p>عدد اللاعبين:</p>
+            <input type="number" id="player-count" min="2" max="10" value="2" onchange="updateInputs()">
             <div id="names-container">
                 <input type="text" placeholder="اسم اللاعب 1" class="p-name">
                 <input type="text" placeholder="اسم اللاعب 2" class="p-name">
             </div>
-            <button class="action-btn" onclick="startBattle()">ابدأ المعركة</button>
+            <button class="action-btn" onclick="startPlay()">ابدأ اللعب</button>
         </div>
 
         <div id="game-screen" class="screen hidden">
-            <div id="turn-info" class="gold-text">دور اللاعب: <span id="current-p"></span></div>
+            <div id="turn-info" class="gold-text">دور: <span id="current-p"></span></div>
             <div class="glass-box">
-                <p id="q-text">جاري التحميل...</p>
+                <p id="q-text"></p>
                 <p id="a-text" class="hidden-ans hidden"></p>
             </div>
-            <button id="show-ans-btn" class="action-btn" onclick="showAnswer()">إظهار الإجابة</button>
-            <div id="score-controls" class="hidden flex-gap">
-                <button class="btn-success" onclick="handleScore(true)">صح ✅</button>
-                <button class="btn-danger" onclick="handleScore(false)">غلط ❌</button>
+            <button id="show-ans-btn" class="action-btn" onclick="revealAns()">إظهار الإجابة</button>
+            <div id="score-controls" class="hidden" style="display:flex; gap:10px; margin-top:10px;">
+                <button class="btn-success" onclick="nextPlayer(true)" style="background:#28a745; flex:1; padding:15px; border-radius:10px; border:none; color:white;">صح ✅</button>
+                <button class="btn-danger" onclick="nextPlayer(false)" style="background:#dc3545; flex:1; padding:15px; border-radius:10px; border:none; color:white;">غلط ❌</button>
             </div>
         </div>
-
-        <div id="result-screen" class="screen hidden">
-            <h2 class="gold-text">الترتيب النهائي</h2>
-            <div id="final-table"></div>
-            <button class="game-card" onclick="location.reload()">لعب من جديد</button>
-        </div>
     </div>
-
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <script src="script.js"></script>
